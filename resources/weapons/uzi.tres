@@ -1,0 +1,23 @@
+[gd_resource type="Resource" script_class="WeaponData" load_steps=2 format=3 uid="uid://cvxhoqqc0hnon"]
+
+[ext_resource type="Script" uid="uid://dlt1l6gpxqnru" path="res://scripts/data/WeaponData.gd" id="1_e52r6"]
+
+[resource]
+script = ExtResource("1_e52r6")
+weapon_name = "uzi"
+weapon_display_name = "uzi冲锋枪"
+description = "射速极快的冲锋枪"
+weapon_type = 0
+rarity = 0
+base_damage = 17
+fire_rate = 5.0
+attack_range = 1000.0
+attack_distance = 1000.0
+ammo_type = 0
+reload_time = 1.5
+current_magazine_ammo = 33
+needs_aiming = false
+projectile_type = 0
+magazine_size = 33
+special_effects = Array[String]([])
+metadata/_custom_type_script = "uid://dlt1l6gpxqnru"

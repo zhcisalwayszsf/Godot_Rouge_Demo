@@ -1,0 +1,39 @@
+[gd_scene load_steps=3 format=3 uid="uid://b881frml0ppy8"]
+
+[ext_resource type="Texture2D" uid="uid://dithfprgumf0u" path="res://icon.svg" id="1_yu0rx"]
+
+[sub_resource type="Theme" id="Theme_xb26d"]
+Label/font_sizes/font_size = 24
+
+[node name="TempSkill" type="Control"]
+layout_mode = 3
+anchors_preset = 0
+
+[node name="VBoxContainer" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -80.0
+offset_top = -60.0
+offset_right = 40.0
+offset_bottom = 100.0
+grow_horizontal = 2
+grow_vertical = 2
+alignment = 1
+
+[node name="TextureRect" type="TextureRect" parent="VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+size_flags_stretch_ratio = 3.0
+texture = ExtResource("1_yu0rx")
+
+[node name="Panel" type="Label" parent="VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+theme = SubResource("Theme_xb26d")
+text = "技能名称"
+horizontal_alignment = 1
+vertical_alignment = 1

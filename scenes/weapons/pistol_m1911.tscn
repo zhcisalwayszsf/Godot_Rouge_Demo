@@ -1,0 +1,24 @@
+[gd_scene load_steps=4 format=3 uid="uid://dk278pw25vtt1"]
+
+[ext_resource type="Script" uid="uid://yicyd5wrlt6k" path="res://scripts/weapons/Weapon.gd" id="1_2ly0v"]
+[ext_resource type="Texture2D" uid="uid://bjuqynonvb0e3" path="res://assets/weapons/gun.png" id="2_lnj7o"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_5egnq"]
+size = Vector2(111, 61)
+
+[node name="pistol_m1911" type="Area2D"]
+script = ExtResource("1_2ly0v")
+
+[node name="BasePoint" type="Node2D" parent="."]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+position = Vector2(34.5, -18.5)
+shape = SubResource("RectangleShape2D_5egnq")
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+position = Vector2(30, -10)
+scale = Vector2(0.5, 0.5)
+texture = ExtResource("2_lnj7o")
+
+[node name="MuzzlePoint" type="Node2D" parent="."]
+position = Vector2(80, -34)

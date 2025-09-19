@@ -1,0 +1,264 @@
+[gd_scene load_steps=6 format=3 uid="uid://bvlnr5vdnrdg5"]
+
+[ext_resource type="Script" uid="uid://cedp0yqblbace" path="res://scripts/ui/PlayerHUD.gd" id="1_e6e0b"]
+[ext_resource type="Theme" uid="uid://b2adkyx6ox16a" path="res://scenes/ui/healthbar.tres" id="2_31ty4"]
+[ext_resource type="Theme" uid="uid://c2qwpphvvj160" path="res://scenes/ui/energybar.tres" id="3_u16pa"]
+
+[sub_resource type="LabelSettings" id="LabelSettings_u16pa"]
+font_size = 28
+
+[sub_resource type="LabelSettings" id="LabelSettings_u7a8l"]
+font_size = 28
+
+[node name="PlayerHUD" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_e6e0b")
+
+[node name="BottomLeft" type="Control" parent="."]
+layout_mode = 1
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_top = -190.0
+offset_right = 400.0
+grow_vertical = 0
+
+[node name="HealthBar" type="ProgressBar" parent="BottomLeft"]
+layout_mode = 0
+offset_left = 145.0
+offset_top = 50.0
+offset_right = 395.0
+offset_bottom = 80.0
+theme = ExtResource("2_31ty4")
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+step = 1.0
+value = 50.0
+show_percentage = false
+
+[node name="EnergyBar" type="ProgressBar" parent="BottomLeft"]
+layout_mode = 0
+offset_left = 145.0
+offset_top = 120.0
+offset_right = 395.0
+offset_bottom = 150.0
+theme = ExtResource("3_u16pa")
+step = 1.0
+value = 50.0
+show_percentage = false
+
+[node name="HealthEnergyLabels" type="VBoxContainer" parent="BottomLeft"]
+layout_mode = 0
+offset_left = 25.0
+offset_top = 48.0
+offset_right = 132.0
+offset_bottom = 168.0
+
+[node name="HealthLabel" type="Label" parent="BottomLeft/HealthEnergyLabels"]
+layout_mode = 2
+text = "100/100"
+label_settings = SubResource("LabelSettings_u16pa")
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Label" type="Label" parent="BottomLeft/HealthEnergyLabels"]
+layout_mode = 2
+
+[node name="EnergyLabel" type="Label" parent="BottomLeft/HealthEnergyLabels"]
+layout_mode = 2
+text = "100/100"
+label_settings = SubResource("LabelSettings_u7a8l")
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="BottomRight" type="Control" parent="."]
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -400.0
+offset_top = -150.0
+grow_horizontal = 0
+grow_vertical = 0
+
+[node name="VBoxContainer" type="VBoxContainer" parent="BottomRight"]
+layout_mode = 0
+offset_right = 400.0
+offset_bottom = 150.0
+alignment = 1
+
+[node name="WeaponInfo" type="VBoxContainer" parent="BottomRight/VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+alignment = 1
+
+[node name="WeaponName" type="Label" parent="BottomRight/VBoxContainer/WeaponInfo"]
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 3
+
+[node name="AmmoInfo" type="HBoxContainer" parent="BottomRight/VBoxContainer/WeaponInfo"]
+layout_mode = 2
+size_flags_vertical = 3
+size_flags_stretch_ratio = 0.75
+alignment = 1
+
+[node name="AmmoLabel" type="Label" parent="BottomRight/VBoxContainer/WeaponInfo/AmmoInfo"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 1
+size_flags_stretch_ratio = 0.25
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="box" type="BoxContainer" parent="BottomRight/VBoxContainer/WeaponInfo/AmmoInfo"]
+layout_mode = 2
+size_flags_horizontal = 3
+alignment = 1
+
+[node name="ReloadProgress" type="ProgressBar" parent="BottomRight/VBoxContainer/WeaponInfo/AmmoInfo/box"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 1
+max_value = 1.0
+show_percentage = false
+
+[node name="WeaponIcon" type="TextureRect" parent="BottomRight/VBoxContainer/WeaponInfo"]
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 3
+
+[node name="WeaponSlots" type="HBoxContainer" parent="BottomRight/VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+size_flags_stretch_ratio = 0.5
+
+[node name="PrimaryWeapon" type="Panel" parent="BottomRight/VBoxContainer/WeaponSlots"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="PrimaryIcon" type="TextureRect" parent="BottomRight/VBoxContainer/WeaponSlots/PrimaryWeapon"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -20.0
+offset_top = -20.0
+offset_right = 20.0
+offset_bottom = 20.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="SecondaryWeapon" type="Panel" parent="BottomRight/VBoxContainer/WeaponSlots"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="SecondaryIcon" type="TextureRect" parent="BottomRight/VBoxContainer/WeaponSlots/SecondaryWeapon"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -20.0
+offset_top = -20.0
+offset_right = 20.0
+offset_bottom = 20.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="BottomCenter" type="Control" parent="."]
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -200.0
+offset_top = -120.0
+offset_right = 200.0
+grow_horizontal = 2
+grow_vertical = 0
+
+[node name="SkillBar" type="HBoxContainer" parent="BottomCenter"]
+layout_mode = 0
+offset_right = 400.0
+offset_bottom = 120.0
+alignment = 1
+
+[node name="PrimarySkill" type="Panel" parent="BottomCenter/SkillBar"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="PrimarySkillIcon" type="TextureRect" parent="BottomCenter/SkillBar/PrimarySkill"]
+layout_mode = 0
+offset_left = 20.0
+offset_top = 60.0
+offset_right = 60.0
+offset_bottom = 100.0
+
+[node name="PrimarySkillCooldown" type="ProgressBar" parent="BottomCenter/SkillBar/PrimarySkill"]
+layout_mode = 0
+offset_left = 10.0
+offset_top = 10.0
+offset_right = 190.0
+offset_bottom = 37.0
+step = 0.1
+show_percentage = false
+
+[node name="PrimarySkillKey" type="Label" parent="BottomCenter/SkillBar/PrimarySkill"]
+layout_mode = 0
+offset_left = 100.0
+offset_top = 60.0
+offset_right = 180.0
+offset_bottom = 100.0
+
+[node name="SecondarySkill" type="Panel" parent="BottomCenter/SkillBar"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="SecondarySkillIcon" type="TextureRect" parent="BottomCenter/SkillBar/SecondarySkill"]
+layout_mode = 0
+offset_left = 20.0
+offset_top = 60.0
+offset_right = 60.0
+offset_bottom = 100.0
+
+[node name="SecondarySkillCooldown" type="ProgressBar" parent="BottomCenter/SkillBar/SecondarySkill"]
+layout_mode = 0
+offset_left = 10.0
+offset_top = 10.0
+offset_right = 190.0
+offset_bottom = 37.0
+step = 0.1
+show_percentage = false
+
+[node name="SecondarySkillKey" type="Label" parent="BottomCenter/SkillBar/SecondarySkill"]
+layout_mode = 0
+offset_left = 100.0
+offset_top = 60.0
+offset_right = 180.0
+offset_bottom = 100.0
+
+[node name="CenterTop" type="CenterContainer" parent="."]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -100.0
+offset_right = 100.0
+offset_bottom = 80.0
+grow_horizontal = 2
+
+[node name="PickupPrompt" type="Label" parent="CenterTop"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 40

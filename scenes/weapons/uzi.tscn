@@ -1,0 +1,15 @@
+[gd_scene load_steps=3 format=3 uid="uid://ih1gaedylxhy"]
+
+[ext_resource type="Script" uid="uid://yicyd5wrlt6k" path="res://scripts/weapons/Weapon.gd" id="1_mau3w"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_kcpwf"]
+
+[node name="uzi" type="Area2D"]
+script = ExtResource("1_mau3w")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("RectangleShape2D_kcpwf")
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+
+[node name="MuzzlePoint" type="Node2D" parent="."]

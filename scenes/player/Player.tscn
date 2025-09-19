@@ -1,0 +1,35 @@
+[gd_scene load_steps=4 format=3 uid="uid://cufqe8v166o1p"]
+
+[ext_resource type="Script" uid="uid://c7v57hbnpwrou" path="res://Player.gd" id="1_gfjak"]
+[ext_resource type="Texture2D" uid="uid://dithfprgumf0u" path="res://icon.svg" id="2_s25n1"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_ix64g"]
+radius = 20.0
+
+[node name="Player" type="CharacterBody2D"]
+collision_mask = 126
+script = ExtResource("1_gfjak")
+
+[node name="Visuals" type="Node2D" parent="."]
+
+[node name="Body" type="Sprite2D" parent="Visuals"]
+texture = ExtResource("2_s25n1")
+
+[node name="WeaponPivot" type="Node2D" parent="Visuals"]
+position = Vector2(40, 25)
+
+[node name="PrimaryWeapon" type="Node2D" parent="Visuals/WeaponPivot"]
+
+[node name="SecondaryWeapon" type="Node2D" parent="Visuals/WeaponPivot"]
+
+[node name="AudioEffects" type="Node2D" parent="."]
+
+[node name="SkillPivot" type="Node2D" parent="."]
+
+[node name="PrimarySkill" type="Node2D" parent="SkillPivot"]
+
+[node name="SecondarySkill" type="Node2D" parent="SkillPivot"]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+scale = Vector2(2.83333, 3.03061)
+shape = SubResource("CircleShape2D_ix64g")
