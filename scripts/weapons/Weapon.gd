@@ -6,10 +6,10 @@ class_name WeaponComponent
 var weapon_data: WeaponData
 
 # 子节点引用 - 供WeaponSystem使用
-@onready var weapon_sprite: Sprite2D = $Sprite2D if has_node("ShellEjectPoint") else null
-@onready var muzzle_point: Node2D = $MuzzlePoint if has_node("ShellEjectPoint") else null
+@onready var weapon_sprite: Sprite2D = $Sprite2D if has_node("Sprite2D") else null
+@onready var muzzle_point: Node2D = $MuzzlePoint if has_node("MuzzlePoint") else null
 @onready var shell_eject_point: Node2D = $ShellEjectPoint if has_node("ShellEjectPoint") else null
-@onready var collision_shape: CollisionShape2D = $CollisionShape2D if has_node("ShellEjectPoint") else null
+@onready var collision_shape: CollisionShape2D = $CollisionShape2D if has_node("CollisionShape2D") else null
 
 
 func _init() -> void:

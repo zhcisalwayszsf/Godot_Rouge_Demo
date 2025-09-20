@@ -10,15 +10,12 @@ var current_secondary_weapon_data: WeaponData = null
 var primary_weapon:Node2D #PrimaryWeapon节点
 var secondary_weapon:Node2D  #SecondWeapon节点
 
-
 # 武器节点管理
 var weapon_pivot: Node2D = null  # 武器旋转锚点
 
 # 武器状态
 var active_weapon_slot: int = 0  # 0=主武器, 1=副武器
 var is_reloading: bool = false
-var reload_timer: float = 0.0
-var fire_cooldown_timer: float = 0.0
 
 # 弹药状态 (弹夹中的子弹)
 var primary_magazine_ammo: int = 0
@@ -27,6 +24,15 @@ var secondary_magazine_ammo: int = 0
 # 武器场景路径配置
 var weapon_scenes_path: String = "res://scenes/weapons/"
 
+# 计时器对象池引用
+var reload_timer: Timer = null
+var fire_cooldown_timer: Timer = null
+var burst_cooldown_timer: Timer = null
+
+# 新增变量，用于追踪连发和三连发状态
+var is_firing: bool = false # 追踪连发和三连发状态
+var burst_shots_fired: int = 0  # 三连发已发射的子弹数
+var burst_shots_remaining: int = 0  # 三连发剩余的子弹数
 # 信号
 signal weapon_fired(weapon_data: WeaponData, position: Vector2, direction: Vector2)
 signal weapon_switched(weapon_data: WeaponData, slot: int)
@@ -41,9 +47,10 @@ func _ready():
 	print("WeaponSystem 初始化完成")
 
 func _process(delta):
-	update_timers(delta)
+	# 不再需要手动更新计时器
 	update_weapon_rotation()
-
+# 处理连发射击
+	handle_continuous_fire()
 # === 初始化和设置 ===
 
 func set_weapon_pivot(pivot: Node2D):
@@ -61,13 +68,11 @@ func initialize_default_weapons():
 		equip_weapon_component(default_pistol, 0)
 		switch_weapon(0)
 		
-		
 # === 武器装备系统 ===
 func link_weapon_node(p_weapon_povit:Node2D):
 	primary_weapon = p_weapon_povit.get_node("PrimaryWeapon")
 	secondary_weapon = p_weapon_povit.get_node("SecondaryWeapon")
 	print("连接节点:"+primary_weapon.name+secondary_weapon.name)
-
 
 func equip_weapon_component(weapon_node: WeaponComponent, slot: int) -> bool:
 	"""装备武器实例到指定槽位（保留运行时修改）"""
@@ -115,8 +120,7 @@ func equip_weapon_component(weapon_node: WeaponComponent, slot: int) -> bool:
 		else:
 			remove_all_children(secondary_weapon)
 			secondary_weapon.add_child(weapon_node)
-		# weapon_instance.name = "Weapon_Slot_" + str(slot)  # ← 移除这行重命名
-		print("武器节点名称保持为: ", weapon_node.name)  # 应该是武器的原始名称
+		print("武器节点名称保持为: ", weapon_node.name)
 	
 	# 初始时隐藏非激活武器
 	if slot != active_weapon_slot:
@@ -205,8 +209,6 @@ func remove_all_children(m: Node):
 	for i in range(m.get_child_count() - 1, -1, -1):
 		var child = m.get_child(i)
 		m.remove_child(child)
-		# 可选：如果需要彻底删除节点（释放内存）
-		#child.queue_free()
 
 # === 武器切换系统 ===
 
@@ -221,7 +223,7 @@ func switch_weapon(slot: int):
 	# 更新武器显示状态
 	update_weapon_visibility()
 	
-	# 中断当前重载
+	# 中断当前重装
 	if is_reloading:
 		cancel_reload()
 	
@@ -234,10 +236,10 @@ func switch_weapon(slot: int):
 
 func update_weapon_visibility():
 	"""更新武器可见性"""
-	if primary_weapon: #首先判断有没有节点
+	if primary_weapon:
 		set_weapon_father_node_visibility(0,active_weapon_slot == 0)
 	
-	if secondary_weapon:#首先判断有没有节点
+	if secondary_weapon:
 		set_weapon_father_node_visibility(1,active_weapon_slot == 1)
 
 func set_weapon_father_node_visibility(slot:int,boolvalue:bool):
@@ -252,7 +254,6 @@ func set_weapon_father_node_visibility(slot:int,boolvalue:bool):
 	else:
 		print("警告：设置武器父节点可见性失败")
 		return
-	
 
 func get_next_weapon_slot() -> int:
 	"""获取下一个可用武器槽位"""
@@ -263,6 +264,59 @@ func get_next_weapon_slot() -> int:
 	return active_weapon_slot
 
 # === 射击系统 ===
+func start_firing():
+	"""开始射击（按下鼠标左键）"""
+	var weapon_data = get_active_weapon_data()
+	if not weapon_data or is_reloading:
+		return
+	
+	is_firing = true
+	
+	# 根据射击模式处理
+	match weapon_data.fire_mode:
+		0:  # 单发
+			try_fire()
+		1:  # 连发
+			# 连发模式会在_process中处理
+			pass
+		2:  # 三连发
+			if burst_shots_remaining <= 0:
+				burst_shots_remaining = 3
+				burst_shots_fired = 0
+
+func stop_firing():
+	"""停止射击（释放鼠标左键）"""
+	is_firing = false
+	
+	# 重置三连发状态（如果正在三连发）
+	if burst_shots_remaining > 0:
+		burst_shots_remaining = 0
+		burst_shots_fired = 0
+
+func handle_continuous_fire():
+	"""处理连发射击"""
+	if not is_firing or is_reloading:
+		return
+	
+	var weapon_data = get_active_weapon_data()
+	if not weapon_data:
+		return
+	
+	# 根据射击模式处理
+	match weapon_data.fire_mode:
+		1:  # 连发
+			try_fire()
+		2:  # 三连发
+			if burst_shots_remaining > 0 and burst_shots_fired < 3:
+				# 检查是否在连发冷却中
+				if not fire_cooldown_timer or not is_instance_valid(fire_cooldown_timer) or fire_cooldown_timer.time_left <= 0:
+					if try_fire():
+						burst_shots_fired += 1
+						burst_shots_remaining -= 1
+			elif burst_shots_remaining <= 0:
+				# 三连发结束，重置状态
+				burst_shots_remaining = 0
+				burst_shots_fired = 0
 
 func try_fire() -> bool:
 	"""尝试开火"""
@@ -275,9 +329,15 @@ func try_fire() -> bool:
 	if not weapon_data or not weapon_component:
 		return false
 	
+	# 单发模式需要检查click_rate
+	if weapon_data.fire_mode == 0:
+		# 检查是否在点击冷却中
+		if fire_cooldown_timer and is_instance_valid(fire_cooldown_timer) and fire_cooldown_timer.time_left > 0:
+			return false
+	
 	# 消耗弹药
 	if not consume_magazine_ammo():
-		# 弹夹空了，尝试自动重载
+		# 弹夹空了，尝试自动重装
 		if can_reload():
 			start_reload()
 		return false
@@ -285,14 +345,65 @@ func try_fire() -> bool:
 	# 执行射击
 	execute_fire(weapon_data, weapon_component)
 	
-	# 设置射击冷却
-	fire_cooldown_timer = 1.0 / weapon_data.fire_rate
+	# 设置射击冷却 - 使用TimerPool
+	var cooldown_time = 1.0 / weapon_data.fire_rate
+	start_fire_cooldown(cooldown_time)
 	
 	return true
 
 func can_fire() -> bool:
 	"""检查是否可以开火"""
-	if is_reloading or fire_cooldown_timer > 0:
+	if is_reloading:
+		return false
+		
+	# 检查射击冷却（连发和三连发模式）
+	var weapon_data = get_active_weapon_data()
+	if weapon_data and weapon_data.fire_mode != 0:  # 非单发模式
+		if fire_cooldown_timer and is_instance_valid(fire_cooldown_timer) and fire_cooldown_timer.time_left > 0:
+			return false
+	
+	if not weapon_data:
+		return false
+	
+	# 检查弹夹是否有子弹
+	return get_active_magazine_ammo() > 0
+
+
+"""
+func try_fire() -> bool:
+	#尝试开火
+	if not can_fire():
+		return false
+	
+	var weapon_data = get_active_weapon_data()
+	var weapon_component = get_active_weapon_component()
+	
+	if not weapon_data or not weapon_component:
+		return false
+	
+	# 消耗弹药
+	if not consume_magazine_ammo():
+		# 弹夹空了，尝试自动重装
+		if can_reload():
+			start_reload()
+		return false
+	
+	# 执行射击
+	execute_fire(weapon_data, weapon_component)
+	
+	# 设置射击冷却 - 使用TimerPool
+	start_fire_cooldown(1.0 / weapon_data.fire_rate)
+	
+	return true
+
+
+func can_fire() -> bool:
+	检查是否可以开火
+	if is_reloading:
+		return false
+		
+	# 检查射击冷却
+	if fire_cooldown_timer and is_instance_valid(fire_cooldown_timer) and fire_cooldown_timer.time_left > 0:
 		return false
 	
 	var weapon_data = get_active_weapon_data()
@@ -301,19 +412,43 @@ func can_fire() -> bool:
 	
 	# 检查弹夹是否有子弹
 	return get_active_magazine_ammo() > 0
+"""
+
+func start_fire_cooldown(cooldown_time: float):
+	"""开始射击冷却"""
+	# 从对象池获取计时器，one_shot会自动归还
+	fire_cooldown_timer = TimerPool.create_one_shot_timer(
+		cooldown_time,
+		func(): fire_cooldown_timer = null  # 只需清空引用
+	)
+	fire_cooldown_timer.start()
 
 func execute_fire(weapon_data: WeaponData, weapon_component: WeaponComponent):
-	"""执行射击逻辑"""
-	var muzzle_pos = weapon_component.get_muzzle_position()
-	var muzzle_dir = weapon_component.get_muzzle_direction()
+	"""执行开火"""
 	
-	# 播放武器动画和特效
-	weapon_component.play_fire_animation()
-	weapon_component.create_muzzle_flash()
-	weapon_component.create_shell_ejection()
+	var muzzle_point = weapon_component.muzzle_point
+	if not muzzle_point:
+		print("错误: 武器组件缺少 MuzzlePoint 节点")
+		return
+
+	# Step 1: 创建子弹数据对象
+	var bullet_data = Bullet.BulletData.new()
+	bullet_data.damage = WeaponDamageSystem.calculate_weapon_damage(active_weapon_slot)
+	bullet_data.travel_range = weapon_data.attack_distance
+	bullet_data.speed = 1000 # 可以根据武器类型调整
+	bullet_data.direction = (PlayerDataManager.player_node.get_global_mouse_position() - muzzle_point.global_position).normalized()
+	bullet_data.start_position = muzzle_point.global_position
+
+	# bullet_data.special_info = {} # 在这里添加特殊效果信息
+
+	# Step 2: 从对象池获取子弹，并将数据传递给它
+	var bullet = BulletPool.get_bullet(bullet_data)
+	if not bullet:
+		print("警告：无法从对象池获取子弹实例")
+		return
 	
-	# 发射信号，让其他系统处理子弹生成
-	weapon_fired.emit(weapon_data, muzzle_pos, muzzle_dir)
+	# 发射信号
+	weapon_fired.emit(weapon_data, muzzle_point.global_position, bullet_data.direction)
 	
 	# 播放音效
 	if AudioSystem:
@@ -353,10 +488,10 @@ func set_magazine_ammo(slot: int, ammo: int):
 		secondary_magazine_ammo = ammo
 	magazine_ammo_changed.emit(slot, ammo)
 
-# === 重载系统 ===
+# === 重装系统 ===
 
 func can_reload() -> bool:
-	"""检查是否可以重载"""
+	"""检查是否可以重装"""
 	if is_reloading:
 		return false
 	
@@ -364,7 +499,7 @@ func can_reload() -> bool:
 	if not weapon_data:
 		return false
 	
-	# 检查是否需要重载
+	# 检查是否需要重装
 	var current_ammo = get_active_magazine_ammo()
 	if current_ammo >= weapon_data.magazine_size:
 		return false
@@ -374,7 +509,7 @@ func can_reload() -> bool:
 	return available_ammo > 0
 
 func start_reload():
-	"""开始重载"""
+	"""开始重装"""
 	if not can_reload():
 		return
 	
@@ -385,20 +520,28 @@ func start_reload():
 		return
 	
 	is_reloading = true
-	reload_timer = weapon_data.reload_time
 	
-	# 播放重载动画
-	weapon_component.play_reload_animation()
+	# 使用TimerPool创建重装计时器，one_shot会自动归还
+	reload_timer = TimerPool.create_one_shot_timer(
+		weapon_data.reload_time,
+		func(): _on_reload_finished()
+	)
+	reload_timer.start()
 	
 	weapon_reload_started.emit(weapon_data)
 	
 	if AudioSystem:
 		AudioSystem.play_weapon_sound(weapon_data.weapon_name + "_reload")
 	
-	print("开始重载: ", weapon_data.weapon_name, " 时间: ", reload_timer, "秒")
+	print("开始重装: ", weapon_data.weapon_name, " 时间: ", weapon_data.reload_time, "秒")
+
+func _on_reload_finished():
+	"""重装完成回调"""
+	finish_reload()
+	reload_timer = null  # 计时器已自动归还，只需清空引用
 
 func finish_reload():
-	"""完成重载"""
+	"""完成重装"""
 	var weapon_data = get_active_weapon_data()
 	if not weapon_data:
 		return
@@ -417,34 +560,39 @@ func finish_reload():
 	set_magazine_ammo(active_weapon_slot, current_ammo + ammo_to_reload)
 	
 	is_reloading = false
-	reload_timer = 0.0
 	
 	weapon_reload_finished.emit(weapon_data)
 	
-	print("重载完成: ", weapon_data.weapon_name, " 弹夹: ", get_active_magazine_ammo())
+	print("重装完成: ", weapon_data.weapon_name, " 弹夹: ", get_active_magazine_ammo())
 
 func cancel_reload():
-	"""取消重载"""
+	"""取消重装"""
 	if not is_reloading:
 		return
 	
 	is_reloading = false
-	reload_timer = 0.0
-	print("重载被取消")
+	
+	# 对于one_shot计时器，只需停止即可，会自动归还
+	if reload_timer and is_instance_valid(reload_timer):
+		reload_timer.stop()
+		reload_timer = null
+	
+	print("重装被取消")
 
 func get_reload_progress() -> float:
-	"""获取重载进度 (0.0 - 1.0)"""
-	if not is_reloading:
+	"""获取重装进度 (0.0 - 1.0)"""
+	if not is_reloading or not reload_timer or not is_instance_valid(reload_timer):
 		return 0.0
 	
 	var weapon_data = get_active_weapon_data()
 	if not weapon_data or weapon_data.reload_time <= 0:
 		return 1.0
 	
-	return 1.0 - (reload_timer / weapon_data.reload_time)
+	var elapsed_time = weapon_data.reload_time - reload_timer.time_left
+	return elapsed_time / weapon_data.reload_time
 
 # === 武器旋转和瞄准 ===
-
+''''
 func update_weapon_rotation():
 	"""更新武器旋转（跟随鼠标）"""
 	if not weapon_pivot:
@@ -464,19 +612,29 @@ func update_weapon_rotation():
 			active_weapon.weapon_sprite.flip_v = true
 		else:
 			active_weapon.weapon_sprite.flip_v = false
-
-# === 计时器更新 ===
-
-func update_timers(delta: float):
-	"""更新计时器"""
-	if fire_cooldown_timer > 0:
-		fire_cooldown_timer -= delta
+'''
+# res://scripts/managers/WeaponSystem.gd
+# ... (其他代码保持不变) ...
 	
-	if is_reloading:
-		reload_timer -= delta
-		if reload_timer <= 0:
-			finish_reload()
-
+func update_weapon_rotation():
+	"""更新武器旋转（跟随鼠标）"""
+	if not weapon_pivot:
+		return
+	
+	var mouse_pos = weapon_pivot.get_global_mouse_position()
+	var direction = (mouse_pos - weapon_pivot.global_position).normalized()
+	
+	# 计算角度
+	var angle = direction.angle()
+	weapon_pivot.rotation = angle
+	
+	# 根据鼠标的X轴方向翻转整个武器锚点
+	if direction.x < 0:
+		# 鼠标在左侧，将 WeaponPivot 在垂直方向上进行镜像缩放
+		weapon_pivot.scale.y = -1
+	else:
+		# 鼠标在右侧，恢复正常缩放
+		weapon_pivot.scale.y = 1
 # === 武器升级系统 ===
 
 func apply_weapon_upgrade(weapon_data: WeaponData, upgrade_type: String, value: float):
@@ -552,7 +710,7 @@ func has_weapon(slot: int) -> bool:
 
 func is_weapon_ready() -> bool:
 	"""检查当前武器是否准备就绪"""
-	return get_active_weapon_data() != null and not is_reloading and fire_cooldown_timer <= 0
+	return get_active_weapon_data() != null and not is_reloading and can_fire()
 
 # === 武器信息 ===
 
@@ -570,6 +728,14 @@ func get_all_weapons_info() -> Array[String]:
 		info_array.append(get_weapon_info(i))
 	return info_array
 
+# === 清理资源 ===
+
+func _exit_tree():
+	"""节点退出场景树时清理计时器引用"""
+	# one_shot计时器会自动归还，只需清空引用
+	reload_timer = null
+	fire_cooldown_timer = null
+
 # === 调试功能 ===
 
 func debug_print_status():
@@ -580,7 +746,7 @@ func debug_print_status():
 	print("副武器: ", current_secondary_weapon_data.weapon_name if current_secondary_weapon_data else "无")
 	print("主武器弹夹: ", primary_magazine_ammo)
 	print("副武器弹夹: ", secondary_magazine_ammo)
-	print("是否重载中: ", is_reloading)
-	print("重载进度: ", get_reload_progress() * 100, "%")
-	print("射击冷却: ", fire_cooldown_timer)
+	print("是否重装中: ", is_reloading)
+	print("重装进度: ", get_reload_progress() * 100, "%")
+	print("射击冷却剩余时间: ", fire_cooldown_timer.time_left if fire_cooldown_timer and is_instance_valid(fire_cooldown_timer) else 0)
 	print("=========================")

@@ -126,7 +126,7 @@ func connect_needed_signals():
 
 ### 伤害合成 - 装备或技能改变时触发
 
-func calculate_weapon_damage(p_active_weapon: int):
+func calculate_weapon_damage(p_active_weapon: int)->float:
 	"""计算武器伤害"""
 	var p_multiplier: float = 1.0
 	
@@ -144,7 +144,7 @@ func calculate_weapon_damage(p_active_weapon: int):
 			final_damage = (primary_weapon_default_damage * p_multiplier) + primary_weapon_extra_damage
 		1:
 			final_damage = (secondary_weapon_default_damage * p_multiplier) + secondary_weapon_extra_damage
-	
+	return final_damage
 	print("DamageSystem: 计算武器伤害，最终伤害=", final_damage)
 
 func get_weapon_damage() -> float:

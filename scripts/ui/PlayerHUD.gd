@@ -136,6 +136,7 @@ func _process(delta):
 		ui_update_timer = UI_UPDATE_INTERVAL
 		update_cached_ui_elements()
 		update_skill_cooldowns()
+		update_weapon_states()
 		
 func update_cached_ui_elements():
 	var stats = PlayerDataManager.get_player_stats()

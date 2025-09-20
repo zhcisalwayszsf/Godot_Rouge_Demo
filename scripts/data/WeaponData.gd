@@ -10,12 +10,15 @@ class_name WeaponData
 @export_enum("枪械", "近战", "魔法", "投掷") var weapon_type: int = 0
 #@export_enum("无（普通）", "一次性", "诅咒", "多格占位型") var special_type: int = 0
 @export_enum("普通", "稀有", "史诗", "传说") var rarity: int = 0
+@export_enum("单发","连发","三连发") var fire_mode:int = 0
+@export var burst_count: int = 3 # 如果是三连发，每次发射的子弹数
 
 # 战斗属性
 @export_group("战斗属性")
 @export var base_damage: float = 10
 @export var extra_damage: float = 0
 @export var fire_rate: float = 1.0  # 射速
+@export var click_rate: float = 0.2 # 鼠标松开后再次按下的最小间隔
 @export var attack_range: float = 300.0 # 攻击范围
 @export var attack_distance: float = 500.0 # 射程
 @export_enum("普通子弹", "特殊子弹", "箭矢", "魔力精华", "无消耗") var ammo_type: int = 0

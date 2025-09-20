@@ -1,0 +1,18 @@
+[gd_scene load_steps=4 format=3 uid="uid://w4krshjbxdlo"]
+
+[ext_resource type="Texture2D" uid="uid://bsxrbwk5wosd8" path="res://assets/ammo/firammo.png" id="1_83ft3"]
+[ext_resource type="Script" uid="uid://mp7votxt2cds" path="res://scripts/bullets/bullet.gd" id="1_osi0u"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_5bej0"]
+radius = 15.0
+
+[node name="NormalAmmo" type="Area2D"]
+script = ExtResource("1_osi0u")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("CircleShape2D_5bej0")
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+position = Vector2(1.90735e-06, 4.76837e-07)
+scale = Vector2(0.8, 0.8)
+texture = ExtResource("1_83ft3")

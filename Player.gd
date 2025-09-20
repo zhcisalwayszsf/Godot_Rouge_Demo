@@ -107,8 +107,12 @@ func _input(event):
 		return
 	
 	# 武器输入
+	# 武器输入 - 改为使用连发系统
 	if event.is_action_pressed("lb"):
-		WeaponSystem.try_fire()
+		WeaponSystem.start_firing()
+	
+	if event.is_action_released("lb"):
+		WeaponSystem.stop_firing()
 	
 	if event.is_action_pressed("r"):
 		WeaponSystem.start_reload()
