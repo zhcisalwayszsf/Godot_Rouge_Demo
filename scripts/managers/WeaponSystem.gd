@@ -29,10 +29,11 @@ var reload_timer: Timer = null
 var fire_cooldown_timer: Timer = null
 var burst_cooldown_timer: Timer = null
 
-# 新增变量，用于追踪连发和三连发状态
-var is_firing: bool = false # 追踪连发和三连发状态
+# 在类变量部分添加以下变量
+var is_firing: bool = false  # 是否正在连发
 var burst_shots_fired: int = 0  # 三连发已发射的子弹数
 var burst_shots_remaining: int = 0  # 三连发剩余的子弹数
+
 # 信号
 signal weapon_fired(weapon_data: WeaponData, position: Vector2, direction: Vector2)
 signal weapon_switched(weapon_data: WeaponData, slot: int)
@@ -49,7 +50,7 @@ func _ready():
 func _process(delta):
 	# 不再需要手动更新计时器
 	update_weapon_rotation()
-# 处理连发射击
+	#处理连发模式
 	handle_continuous_fire()
 # === 初始化和设置 ===
 
@@ -368,52 +369,6 @@ func can_fire() -> bool:
 	# 检查弹夹是否有子弹
 	return get_active_magazine_ammo() > 0
 
-
-"""
-func try_fire() -> bool:
-	#尝试开火
-	if not can_fire():
-		return false
-	
-	var weapon_data = get_active_weapon_data()
-	var weapon_component = get_active_weapon_component()
-	
-	if not weapon_data or not weapon_component:
-		return false
-	
-	# 消耗弹药
-	if not consume_magazine_ammo():
-		# 弹夹空了，尝试自动重装
-		if can_reload():
-			start_reload()
-		return false
-	
-	# 执行射击
-	execute_fire(weapon_data, weapon_component)
-	
-	# 设置射击冷却 - 使用TimerPool
-	start_fire_cooldown(1.0 / weapon_data.fire_rate)
-	
-	return true
-
-
-func can_fire() -> bool:
-	检查是否可以开火
-	if is_reloading:
-		return false
-		
-	# 检查射击冷却
-	if fire_cooldown_timer and is_instance_valid(fire_cooldown_timer) and fire_cooldown_timer.time_left > 0:
-		return false
-	
-	var weapon_data = get_active_weapon_data()
-	if not weapon_data:
-		return false
-	
-	# 检查弹夹是否有子弹
-	return get_active_magazine_ammo() > 0
-"""
-
 func start_fire_cooldown(cooldown_time: float):
 	"""开始射击冷却"""
 	# 从对象池获取计时器，one_shot会自动归还
@@ -436,11 +391,13 @@ func execute_fire(weapon_data: WeaponData, weapon_component: WeaponComponent):
 	bullet_data.damage = WeaponDamageSystem.calculate_weapon_damage(active_weapon_slot)
 	bullet_data.travel_range = weapon_data.attack_distance
 	bullet_data.speed = 1000 # 可以根据武器类型调整
-	bullet_data.direction = (PlayerDataManager.player_node.get_global_mouse_position() - muzzle_point.global_position).normalized()
+	var direction = (PlayerDataManager.player_node.get_global_mouse_position() - muzzle_point.global_position).normalized()
+	bullet_data.direction = get_weapon_precision(weapon_data,direction)
 	bullet_data.start_position = muzzle_point.global_position
 
 	# bullet_data.special_info = {} # 在这里添加特殊效果信息
-
+	
+	
 	# Step 2: 从对象池获取子弹，并将数据传递给它
 	var bullet = BulletPool.get_bullet(bullet_data)
 	if not bullet:
@@ -592,30 +549,6 @@ func get_reload_progress() -> float:
 	return elapsed_time / weapon_data.reload_time
 
 # === 武器旋转和瞄准 ===
-''''
-func update_weapon_rotation():
-	"""更新武器旋转（跟随鼠标）"""
-	if not weapon_pivot:
-		return
-	
-	var mouse_pos = weapon_pivot.get_global_mouse_position()
-	var direction = (mouse_pos - weapon_pivot.global_position).normalized()
-	
-	# 计算角度
-	var angle = direction.angle()
-	weapon_pivot.rotation = angle
-	
-	# 根据角度翻转武器精灵
-	var active_weapon = get_active_weapon_component()
-	if active_weapon and active_weapon.weapon_sprite:
-		if abs(angle) > PI / 2:
-			active_weapon.weapon_sprite.flip_v = true
-		else:
-			active_weapon.weapon_sprite.flip_v = false
-'''
-# res://scripts/managers/WeaponSystem.gd
-# ... (其他代码保持不变) ...
-	
 func update_weapon_rotation():
 	"""更新武器旋转（跟随鼠标）"""
 	if not weapon_pivot:
@@ -635,8 +568,40 @@ func update_weapon_rotation():
 	else:
 		# 鼠标在右侧，恢复正常缩放
 		weapon_pivot.scale.y = 1
-# === 武器升级系统 ===
 
+# === 武器精准度系统 ===
+func get_weapon_precision(weaponData:WeaponData,offset_vector:Vector2)->Vector2:
+	var weapon_precision
+	if weaponData.weapon_precision > 1:
+		weapon_precision=1
+	elif weaponData.weapon_precision <0 :
+		weapon_precision=0
+	else:
+		weapon_precision = weaponData.weapon_precision
+		
+	var weapon_precision_angle
+	if weaponData.weapon_precision_angle >0 and weaponData.weapon_precision_angle<=180 :
+		weapon_precision_angle = weaponData.weapon_precision_angle / 2
+	else: weapon_precision_angle=15
+	
+	var random_value = randf()
+	
+	if random_value >= weapon_precision:
+		var random_angle_deg : float =randf_range(-weapon_precision_angle,weapon_precision_angle)
+		offset_vector = offset_vector.rotated(deg_to_rad(random_angle_deg))
+		
+	return offset_vector
+
+func set_weapon_precision(weaponData:WeaponData,precision:float,set_angle:bool=false,angle:float=30):
+	precision = precision if precision < 1 else 1
+	precision = precision if precision > 0 else 0
+	if set_angle:
+		weaponData.weapon_precision_angle = angle if angle >= 0 and angle <= 30 else 30
+	weaponData.weapon_precision = precision
+	
+
+
+# === 武器升级系统 ===
 func apply_weapon_upgrade(weapon_data: WeaponData, upgrade_type: String, value: float):
 	"""应用武器升级"""
 	if not weapon_data:

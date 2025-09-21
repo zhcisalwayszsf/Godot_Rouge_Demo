@@ -19,10 +19,13 @@ class_name WeaponData
 @export var extra_damage: float = 0
 @export var fire_rate: float = 1.0  # 射速
 @export var click_rate: float = 0.2 # 鼠标松开后再次按下的最小间隔
+@export var weapon_precision:float = 0.8 #射击精准度
+@export var weapon_precision_angle:float=10 #射击扩散角度
 @export var attack_range: float = 300.0 # 攻击范围
 @export var attack_distance: float = 500.0 # 射程
+@export var bullet_speed:float = 1000
 @export_enum("普通子弹", "特殊子弹", "箭矢", "魔力精华", "无消耗") var ammo_type: int = 0
-#@export_enum("普通", "穿甲", "燃烧", "中毒", "百分百") var damage_type: int = 0
+@export_enum("普通", "穿甲", "燃烧", "中毒", "百分比") var damage_type: int = 0
 @export var reload_time: float = 2.0  # 换弹时间（秒）
 @export var current_magazine_ammo: int = 30  # 当前弹夹子弹数（运行时数据）
 

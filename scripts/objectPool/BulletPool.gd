@@ -5,8 +5,8 @@ extends Node
 var bullet_scene: PackedScene = preload("res://scenes/ammo/Bullet.tscn")
 var bullet_pool: Array[Bullet] = []
 
-@export var max_pool_size: int = 50
-@export var preload_count: int = 10
+@export var max_pool_size: int = 500
+@export var preload_count: int = 40
 
 func _ready():
 	for i in range(preload_count):
@@ -20,6 +20,8 @@ func create_new_bullet() -> Bullet:
 	new_bullet.visible = false
 	new_bullet.set_process(false)
 	new_bullet.set_collision_mask_value(2, false)
+	new_bullet.set_collision_mask_value(3, false)
+	new_bullet.set_collision_mask_value(7, false)
 	return new_bullet
 
 func get_bullet(p_data: Bullet.BulletData) -> Bullet:
@@ -27,7 +29,7 @@ func get_bullet(p_data: Bullet.BulletData) -> Bullet:
 	var bullet: Bullet
 	
 	if bullet_pool.size() > 0:
-		bullet = bullet_pool.pop_front()
+		bullet = bullet_pool.pop_back()
 		if not is_instance_valid(bullet):
 			bullet = create_new_bullet()
 	else:

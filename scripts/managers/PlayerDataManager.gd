@@ -48,7 +48,7 @@ func initialize_default_stats():
 	player_stats.move_speed = 300.0
 	
 	# 默认弹药
-	player_stats.normal_ammo = 120
+	player_stats.normal_ammo = 320
 	player_stats.special_ammo = 30
 	player_stats.arrows = 50
 	player_stats.mana_essence = 80
