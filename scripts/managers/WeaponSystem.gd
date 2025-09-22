@@ -17,7 +17,7 @@ var weapon_pivot: Node2D = null  # 武器旋转锚点
 var active_weapon_slot: int = 0  # 0=主武器, 1=副武器
 var is_reloading: bool = false
 
-# 弹药状态 (弹夹中的子弹)
+# 弹药状态 (弹匣中的子弹)
 var primary_magazine_ammo: int = 0
 var secondary_magazine_ammo: int = 0
 
@@ -27,12 +27,14 @@ var weapon_scenes_path: String = "res://scenes/weapons/"
 # 计时器对象池引用
 var reload_timer: Timer = null
 var fire_cooldown_timer: Timer = null
+var click_cooldown_timer: Timer = null
 var burst_cooldown_timer: Timer = null
 
 # 在类变量部分添加以下变量
 var is_firing: bool = false  # 是否正在连发
-var burst_shots_fired: int = 0  # 三连发已发射的子弹数
-var burst_shots_remaining: int = 0  # 三连发剩余的子弹数
+var is_bursting: bool = false  # 是否在多连发
+var burst_shots_remaining: int = 0  # 爆发射击剩余的子弹数
+var burst_shots_total: int = 4  # 爆发射击总子弹数（可配置）
 
 # 信号
 signal weapon_fired(weapon_data: WeaponData, position: Vector2, direction: Vector2)
@@ -50,8 +52,9 @@ func _ready():
 func _process(delta):
 	# 不再需要手动更新计时器
 	update_weapon_rotation()
-	#处理连发模式
+	# 处理连发模式
 	handle_continuous_fire()
+
 # === 初始化和设置 ===
 
 func set_weapon_pivot(pivot: Node2D):
@@ -97,7 +100,7 @@ func equip_weapon_component(weapon_node: WeaponComponent, slot: int) -> bool:
 	if slot == 0:
 		current_primary_weapon_data = weapon_data
 		current_primary_weapon = weapon_node
-		# 保持当前弹夹弹药数（如果武器有的话）
+		# 保持当前弹匣弹药数（如果武器有的话）
 		if weapon_data.current_magazine_ammo > 0:
 			primary_magazine_ammo = weapon_data.current_magazine_ammo
 		else:
@@ -106,7 +109,7 @@ func equip_weapon_component(weapon_node: WeaponComponent, slot: int) -> bool:
 	else:
 		current_secondary_weapon_data = weapon_data
 		current_secondary_weapon = weapon_node
-		# 保持当前弹夹弹药数（如果武器有的话）
+		# 保持当前弹匣弹药数（如果武器有的话）
 		if weapon_data.current_magazine_ammo > 0:
 			secondary_magazine_ammo = weapon_data.current_magazine_ammo
 		else:
@@ -228,7 +231,15 @@ func switch_weapon(slot: int):
 	if is_reloading:
 		cancel_reload()
 	
+	# 中断当前爆发射击
+	if is_bursting:
+		cancel_burst_fire()
+	if click_cooldown_timer and is_instance_valid(click_cooldown_timer):
+		click_cooldown_timer.stop()
+		click_cooldown_timer = null
+	is_firing = false
 	var active_weapon_data = get_active_weapon_data()
+	
 	if active_weapon_data:
 		weapon_switched.emit(active_weapon_data, slot)
 		print("切换武器: 槽位 ", old_slot, " -> ", slot, " (", active_weapon_data.weapon_name, ")")
@@ -268,7 +279,7 @@ func get_next_weapon_slot() -> int:
 func start_firing():
 	"""开始射击（按下鼠标左键）"""
 	var weapon_data = get_active_weapon_data()
-	if not weapon_data or is_reloading:
+	if not weapon_data or is_reloading or is_bursting:
 		return
 	
 	is_firing = true
@@ -280,23 +291,16 @@ func start_firing():
 		1:  # 连发
 			# 连发模式会在_process中处理
 			pass
-		2:  # 三连发
-			if burst_shots_remaining <= 0:
-				burst_shots_remaining = 3
-				burst_shots_fired = 0
+		2:  # 爆发射击
+			start_burst_fire()
 
 func stop_firing():
 	"""停止射击（释放鼠标左键）"""
 	is_firing = false
-	
-	# 重置三连发状态（如果正在三连发）
-	if burst_shots_remaining > 0:
-		burst_shots_remaining = 0
-		burst_shots_fired = 0
 
 func handle_continuous_fire():
 	"""处理连发射击"""
-	if not is_firing or is_reloading:
+	if not is_firing or is_reloading or is_bursting:
 		return
 	
 	var weapon_data = get_active_weapon_data()
@@ -307,17 +311,140 @@ func handle_continuous_fire():
 	match weapon_data.fire_mode:
 		1:  # 连发
 			try_fire()
-		2:  # 三连发
-			if burst_shots_remaining > 0 and burst_shots_fired < 3:
-				# 检查是否在连发冷却中
-				if not fire_cooldown_timer or not is_instance_valid(fire_cooldown_timer) or fire_cooldown_timer.time_left <= 0:
-					if try_fire():
-						burst_shots_fired += 1
-						burst_shots_remaining -= 1
-			elif burst_shots_remaining <= 0:
-				# 三连发结束，重置状态
-				burst_shots_remaining = 0
-				burst_shots_fired = 0
+
+func start_burst_fire():
+	"""开始爆发射击"""
+	if is_bursting:
+		return
+		
+	var weapon_data = get_active_weapon_data()
+	if not weapon_data:
+		return
+	burst_shots_total = get_active_weapon_data().burst_count
+	# 检查click_rate限制（与单发模式相同的冷却检查）
+	if click_cooldown_timer and is_instance_valid(click_cooldown_timer) and click_cooldown_timer.time_left > 0:
+		return
+	
+	# 计算实际能射出的子弹数（考虑弹匣剩余）
+	var current_ammo = get_active_magazine_ammo()
+	if current_ammo <= 0:
+		# 弹匣空了，尝试自动重装
+		if can_reload():
+			start_reload()
+		return
+	
+	# 设置爆发射击状态
+	is_bursting = true
+	burst_shots_remaining = min(burst_shots_total, current_ammo)
+	var original_shots = burst_shots_remaining
+	
+	#print("开始爆发射击，计划射出 ", original_shots, " 发子弹")
+	
+	# 立即射出第一发
+	if burst_shots_remaining > 0:
+		if execute_single_burst_shot():
+			burst_shots_remaining -= 1
+		else:
+			# 第一发失败，结束爆发
+			cancel_burst_fire()
+			return
+	
+	# 如果还有剩余子弹，设置定时器继续射击
+	if burst_shots_remaining > 0:
+		schedule_next_burst_shot()
+	
+	else:
+		# 只有一发，直接结束爆发射击
+		finish_burst_fire()
+	
+	
+func schedule_next_burst_shot():
+	"""安排下一发爆发射击"""
+	var weapon_data = get_active_weapon_data()
+	if not weapon_data or burst_shots_remaining <= 0:
+		finish_burst_fire()
+		return
+	
+	var fire_interval = 1.0 / weapon_data.fire_rate
+	burst_cooldown_timer = TimerPool.create_one_shot_timer(
+		fire_interval,
+		func(): continue_burst_fire()
+	)
+	burst_cooldown_timer.start()
+
+func continue_burst_fire():
+	"""继续爆发射击"""
+	burst_cooldown_timer = null
+	
+	if not is_bursting or burst_shots_remaining <= 0:
+		finish_burst_fire()
+		return
+	
+	# 执行下一发射击
+	if execute_single_burst_shot():
+		burst_shots_remaining -= 1
+		
+		# 检查是否还有剩余子弹
+		if burst_shots_remaining > 0:
+			schedule_next_burst_shot()
+		else:
+			finish_burst_fire()
+	else:
+		# 射击失败（可能弹匣空了），结束爆发
+		finish_burst_fire()
+
+func execute_single_burst_shot() -> bool:
+	"""执行单发爆发射击"""
+	var weapon_data = get_active_weapon_data()
+	var weapon_component = get_active_weapon_component()
+	
+	if not weapon_data or not weapon_component:
+		return false
+	
+	# 检查弹匣是否还有子弹
+	if get_active_magazine_ammo() <= 0:
+		return false
+	
+	# 消耗弹药
+	if not consume_magazine_ammo():
+		return false
+	
+	# 执行射击
+	execute_fire(weapon_data, weapon_component)
+	return true
+
+func finish_burst_fire():
+	"""完成爆发射击"""
+	is_bursting = false
+	burst_shots_remaining = 0
+	
+	# 清理定时器
+	if burst_cooldown_timer and is_instance_valid(burst_cooldown_timer):
+		burst_cooldown_timer.stop()
+		burst_cooldown_timer = null
+	
+	# 设置射击冷却，使用与单发相同的逻辑
+	var weapon_data = get_active_weapon_data()
+	if weapon_data:
+		var click_cooldown_time = 1.0 / weapon_data.click_rate
+		start_cooldown(click_cooldown_time,1)
+	
+	#print("爆发射击完成")
+
+func cancel_burst_fire():
+	"""取消爆发射击"""
+	if not is_bursting:
+		return
+	
+	is_bursting = false
+	burst_shots_remaining = 0
+	
+	# 清理定时器
+	if burst_cooldown_timer and is_instance_valid(burst_cooldown_timer):
+		burst_cooldown_timer.stop()
+		burst_cooldown_timer = null
+	
+	print("爆发射击被取消")
 
 func try_fire() -> bool:
 	"""尝试开火"""
@@ -333,12 +460,12 @@ func try_fire() -> bool:
 	# 单发模式需要检查click_rate
 	if weapon_data.fire_mode == 0:
 		# 检查是否在点击冷却中
-		if fire_cooldown_timer and is_instance_valid(fire_cooldown_timer) and fire_cooldown_timer.time_left > 0:
+		if click_cooldown_timer and is_instance_valid(click_cooldown_timer) and click_cooldown_timer.time_left > 0:
 			return false
-	
+			
 	# 消耗弹药
 	if not consume_magazine_ammo():
-		# 弹夹空了，尝试自动重装
+		# 弹匣空了，尝试自动重装
 		if can_reload():
 			start_reload()
 		return false
@@ -348,35 +475,47 @@ func try_fire() -> bool:
 	
 	# 设置射击冷却 - 使用TimerPool
 	var cooldown_time = 1.0 / weapon_data.fire_rate
-	start_fire_cooldown(cooldown_time)
+	start_cooldown(cooldown_time,0)
+	
+	if weapon_data.fire_mode == 0 :
+		var click_cooldown_time = 1.0 / weapon_data.click_rate
+		start_cooldown(click_cooldown_time,1)
 	
 	return true
 
 func can_fire() -> bool:
 	"""检查是否可以开火"""
-	if is_reloading:
+	if is_reloading or is_bursting:
 		return false
 		
-	# 检查射击冷却（连发和三连发模式）
+	# 检查射击冷却（连发模式）
 	var weapon_data = get_active_weapon_data()
-	if weapon_data and weapon_data.fire_mode != 0:  # 非单发模式
+	if weapon_data and weapon_data.fire_mode == 1:  # 连发模式
 		if fire_cooldown_timer and is_instance_valid(fire_cooldown_timer) and fire_cooldown_timer.time_left > 0:
 			return false
 	
 	if not weapon_data:
 		return false
 	
-	# 检查弹夹是否有子弹
-	return get_active_magazine_ammo() > 0
+	# 检查弹匣是否有子弹
+	return get_active_magazine_ammo() >= 0
 
-func start_fire_cooldown(cooldown_time: float):
+func start_cooldown(cooldown_time: float,type:int=0):
 	"""开始射击冷却"""
 	# 从对象池获取计时器，one_shot会自动归还
-	fire_cooldown_timer = TimerPool.create_one_shot_timer(
-		cooldown_time,
-		func(): fire_cooldown_timer = null  # 只需清空引用
-	)
-	fire_cooldown_timer.start()
+	match  type:
+		0:
+			fire_cooldown_timer = TimerPool.create_one_shot_timer(
+				cooldown_time,
+				func(): fire_cooldown_timer = null  # 只需清空引用
+			)
+			fire_cooldown_timer.start()
+		1:
+			click_cooldown_timer = TimerPool.create_one_shot_timer(
+				cooldown_time,
+				func(): click_cooldown_timer = null  # 只需清空引用
+			)
+			click_cooldown_timer.start()
 
 func execute_fire(weapon_data: WeaponData, weapon_component: WeaponComponent):
 	"""执行开火"""
@@ -411,12 +550,12 @@ func execute_fire(weapon_data: WeaponData, weapon_component: WeaponComponent):
 	if AudioSystem:
 		AudioSystem.play_weapon_sound(weapon_data.weapon_name + "_fire")
 	
-	print("武器开火: ", weapon_data.weapon_name, " 剩余弹夹: ", get_active_magazine_ammo())
+	print("武器开火: ", weapon_data.weapon_name, " 剩余弹匣: ", get_active_magazine_ammo())
 
 # === 弹药管理 ===
 
 func consume_magazine_ammo() -> bool:
-	"""消耗弹夹子弹"""
+	"""消耗弹匣子弹"""
 	if active_weapon_slot == 0:
 		if primary_magazine_ammo > 0:
 			primary_magazine_ammo -= 1
@@ -430,15 +569,15 @@ func consume_magazine_ammo() -> bool:
 	return false
 
 func get_magazine_ammo(slot: int) -> int:
-	"""获取指定槽位弹夹弹药数"""
+	"""获取指定槽位弹匣弹药数"""
 	return primary_magazine_ammo if slot == 0 else secondary_magazine_ammo
 
 func get_active_magazine_ammo() -> int:
-	"""获取当前武器弹夹弹药数"""
+	"""获取当前武器弹匣弹药数"""
 	return get_magazine_ammo(active_weapon_slot)
 
 func set_magazine_ammo(slot: int, ammo: int):
-	"""设置弹夹弹药数"""
+	"""设置弹匣弹药数"""
 	if slot == 0:
 		primary_magazine_ammo = ammo
 	else:
@@ -449,7 +588,7 @@ func set_magazine_ammo(slot: int, ammo: int):
 
 func can_reload() -> bool:
 	"""检查是否可以重装"""
-	if is_reloading:
+	if is_reloading or is_bursting:
 		return false
 	
 	var weapon_data = get_active_weapon_data()
@@ -476,6 +615,10 @@ func start_reload():
 	if not weapon_data or not weapon_component:
 		return
 	
+	# 中断爆发射击
+	if is_bursting:
+		cancel_burst_fire()
+	
 	is_reloading = true
 	
 	# 使用TimerPool创建重装计时器，one_shot会自动归还
@@ -490,7 +633,7 @@ func start_reload():
 	if AudioSystem:
 		AudioSystem.play_weapon_sound(weapon_data.weapon_name + "_reload")
 	
-	print("开始重装: ", weapon_data.weapon_name, " 时间: ", weapon_data.reload_time, "秒")
+	#print("开始重装: ", weapon_data.weapon_name, " 时间: ", weapon_data.reload_time, "秒")
 
 func _on_reload_finished():
 	"""重装完成回调"""
@@ -513,14 +656,14 @@ func finish_reload():
 	# 消耗备用弹药
 	PlayerDataManager.consume_ammo(weapon_data.ammo_type, ammo_to_reload)
 	
-	# 填充弹夹
+	# 填充弹匣
 	set_magazine_ammo(active_weapon_slot, current_ammo + ammo_to_reload)
 	
 	is_reloading = false
 	
 	weapon_reload_finished.emit(weapon_data)
 	
-	print("重装完成: ", weapon_data.weapon_name, " 弹夹: ", get_active_magazine_ammo())
+	print("重装完成: ", weapon_data.weapon_name, " 弹匣: ", get_active_magazine_ammo())
 
 func cancel_reload():
 	"""取消重装"""
@@ -675,7 +818,7 @@ func has_weapon(slot: int) -> bool:
 
 func is_weapon_ready() -> bool:
 	"""检查当前武器是否准备就绪"""
-	return get_active_weapon_data() != null and not is_reloading and can_fire()
+	return get_active_weapon_data() != null and not is_reloading and not is_bursting and can_fire()
 
 # === 武器信息 ===
 
@@ -700,6 +843,7 @@ func _exit_tree():
 	# one_shot计时器会自动归还，只需清空引用
 	reload_timer = null
 	fire_cooldown_timer = null
+	burst_cooldown_timer = null
 
 # === 调试功能 ===
 
@@ -709,9 +853,11 @@ func debug_print_status():
 	print("当前武器槽: ", active_weapon_slot)
 	print("主武器: ", current_primary_weapon_data.weapon_name if current_primary_weapon_data else "无")
 	print("副武器: ", current_secondary_weapon_data.weapon_name if current_secondary_weapon_data else "无")
-	print("主武器弹夹: ", primary_magazine_ammo)
-	print("副武器弹夹: ", secondary_magazine_ammo)
+	print("主武器弹匣: ", primary_magazine_ammo)
+	print("副武器弹匣: ", secondary_magazine_ammo)
 	print("是否重装中: ", is_reloading)
+	print("是否爆发射击中: ", is_bursting)
+	print("爆发剩余子弹: ", burst_shots_remaining)
 	print("重装进度: ", get_reload_progress() * 100, "%")
 	print("射击冷却剩余时间: ", fire_cooldown_timer.time_left if fire_cooldown_timer and is_instance_valid(fire_cooldown_timer) else 0)
 	print("=========================")

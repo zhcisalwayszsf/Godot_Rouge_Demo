@@ -73,7 +73,7 @@ class_name SkillData
 #增益类
 @export_group("增益技能效果")
 @export var can_multiplier: bool = false
-@export_flags("攻击力", "护甲", "移速", "攻速","减伤","闪避","无敌","无碰撞","免控") var buff_flags: int = 1
+@export_flags("攻击力", "护甲", "移速", "攻速","减伤","闪避","无敌","无碰撞","免控") var buff_flags: int = 0
 @export var buff_value: Array[float] = [0,0,0,0,0,0,-1,-1,-1]
 @export var buff_time: Array[float] = [0,0,0,0,0,0,0,0,0] # 持续时间
  # 0=攻击力, 1=防御力, 2=移速, 3=攻速, 4=特殊

@@ -10,6 +10,7 @@ class BulletData:
 	var damage_type:int= 0
 	var damage_method:int =0
 	var travel_range: float = 0
+	var size:float=1
 	var speed: float = 0
 	var direction: Vector2 = Vector2.ZERO
 	var special_info: Dictionary = {}
