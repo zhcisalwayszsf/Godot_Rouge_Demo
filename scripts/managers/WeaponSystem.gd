@@ -731,6 +731,7 @@ func get_weapon_precision(weaponData:WeaponData,offset_vector:Vector2)->Vector2:
 	var random_value = randf()
 	
 	if random_value >= weapon_precision:
+		#随机数大于精准度则扩散
 		var random_angle_deg : float =randf_range(-weapon_precision_angle,weapon_precision_angle)
 		offset_vector = offset_vector.rotated(deg_to_rad(random_angle_deg))
 		

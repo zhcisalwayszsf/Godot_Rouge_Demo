@@ -1,0 +1,105 @@
+extends Node
+
+# 对象池数组
+var free_timers: Array[Timer] = []
+# 使用中的 Timer 计数
+var used_timers_count: int = 0
+# 最大缓存数量
+@export var max_pool_size: int = 30
+# 预创建的 Timer 数量
+@export var preload_count: int = 5
+
+func _ready():
+	# 预创建 Timer 到对象池
+	for i in range(preload_count):
+		var new_timer = create_new_timer()
+		free_timers.append(new_timer)
+
+# 创建新的 Timer 节点
+func create_new_timer() -> Timer:
+	var timer = Timer.new()
+	timer.name = "PooledTimer_" + str(randi())
+	timer.one_shot = false
+	add_child(timer)
+	return timer
+
+# 获取空闲 Timer
+func get_timer() -> Timer:
+	used_timers_count += 1
+	while free_timers.size() > 0:
+		var idle_timer = free_timers.pop_back()
+		if is_instance_valid(idle_timer):
+			idle_timer.set_meta("returned", false)
+			return idle_timer
+	# 如果没有可用的，就新建
+	return create_new_timer()
+
+# 归还 Timer 到对象池
+func return_timer(timer: Timer):
+	if not is_instance_valid(timer):
+		return
+	if timer.has_meta("returned") and timer.get_meta("returned"):
+		return
+	
+	timer.set_meta("returned", true)
+	used_timers_count = max(0, used_timers_count - 1)
+	
+	# 断开所有信号连接
+	for connection in timer.get_signal_connection_list():
+		timer.disconnect(connection.signal.name, connection.callable)
+	
+	timer.stop()
+	timer.one_shot = false
+	timer.wait_time = 1.0
+	
+	if free_timers.size() < max_pool_size:
+		free_timers.append(timer)
+	else:
+		timer.queue_free()
+
+# 清理所有空闲 Timer
+func clear_free_timers():
+	for timer in free_timers:
+		if is_instance_valid(timer):
+			timer.queue_free()
+	free_timers.clear()
+
+# 创建一次性计时器（需手动 start，timeout 后自动归还）
+func create_one_shot_timer(wait_time: float, callback: Callable) -> Timer:
+	var timer = get_timer()
+	timer.one_shot = true
+	timer.wait_time = wait_time
+	timer.stop()
+
+	# 先断开以前可能残留的连接
+	if timer.is_connected("timeout", Callable(self, "_on_one_shot_timeout")):
+		timer.disconnect("timeout", Callable(self, "_on_one_shot_timeout"))
+
+	# 绑定一次回调，并传入 callback
+	timer.connect("timeout", Callable(self, "_on_one_shot_timeout").bind(timer, callback))
+
+	return timer
+
+# 一次性定时器 timeout -> 调用 callback 并归还
+func _on_one_shot_timeout(timer: Timer, callback: Callable) -> void:
+	if is_instance_valid(timer):
+		callback.call()
+		return_timer(timer)
+
+
+# 快速创建循环计时器（需手动 start 与手动归还）
+func create_loop_timer(wait_time: float, callback: Callable) -> Timer:
+	var timer = get_timer()
+	timer.one_shot = false
+	timer.wait_time = wait_time
+	timer.connect("timeout", callback)
+	return timer
+
+# 获取对象池状态信息
+func get_pool_info() -> Dictionary:
+	return {
+		"free_count": free_timers.size(),
+		"used_count": used_timers_count,
+		"total_count": free_timers.size() + used_timers_count,
+		"max_pool_size": max_pool_size
+	}

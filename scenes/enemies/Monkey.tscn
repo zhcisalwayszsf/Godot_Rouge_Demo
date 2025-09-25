@@ -9,6 +9,7 @@ script = ExtResource("2_eccbf")
 enemy_name = "monkey"
 description = "超雄小猴子"
 enemy_type = 0
+use_weapon = true
 max_health = 50.0
 max_armor = 50.0
 move_speed = 150.0
@@ -34,7 +35,7 @@ radius = 96.0
 [node name="Monkey" type="CharacterBody2D"]
 scale = Vector2(0.5, 0.5)
 collision_layer = 2
-collision_mask = 94
+collision_mask = 77
 motion_mode = 1
 script = ExtResource("1_l8146")
 equipped_weapon_id = 2
@@ -61,6 +62,8 @@ tree_root = SubResource("AnimationNodeStateMachine_t5fmx")
 [node name="AudioEffects" type="Node2D" parent="."]
 
 [node name="Area2D" type="Area2D" parent="."]
+collision_layer = 2
+collision_mask = 16
 
 [node name="CollisionShape2D2" type="CollisionShape2D" parent="Area2D"]
 shape = SubResource("CircleShape2D_u8b2p")

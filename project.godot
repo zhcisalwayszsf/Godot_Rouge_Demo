@@ -130,3 +130,4 @@ space={
 2d_physics/layer_5="ammo"
 2d_physics/layer_6="pickup"
 2d_physics/layer_7="special_enemy"
+2d_physics/layer_8="enemy_ammo"

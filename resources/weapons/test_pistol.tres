@@ -6,6 +6,7 @@
 script = ExtResource("1_0j0px")
 weapon_name = "测试手枪"
 weapon_display_name = ""
+id = 0
 description = "基础测试武器"
 weapon_type = 0
 rarity = 0

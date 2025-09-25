@@ -1,0 +1,97 @@
+[gd_scene load_steps=10 format=3 uid="uid://68f77xuutfm0"]
+
+[ext_resource type="Script" uid="uid://brjs7q186p2ev" path="res://scripts/enemies/base_enemies.gd" id="1_poon8"]
+[ext_resource type="Texture2D" uid="uid://dii4f2p5fhq3w" path="res://assets/enemies/漂浮骷髅-s-sheet.png" id="1_re5l2"]
+[ext_resource type="Script" uid="uid://d1gtkfyn3juai" path="res://scripts/data/EnemyData.gd" id="2_8i024"]
+[ext_resource type="Script" uid="uid://dlt1l6gpxqnru" path="res://scripts/data/WeaponData.gd" id="3_8i024"]
+
+[sub_resource type="Resource" id="Resource_8i024"]
+script = ExtResource("2_8i024")
+enemy_name = "dd"
+description = "大部分小怪的通用模板"
+enemy_type = 2
+use_weapon = false
+max_health = 50.0
+max_armor = 50.0
+move_speed = 150.0
+attack_damage = 10.0
+attack_distance = 100.0
+detection_range = 300.0
+attack_cooldown = 1.5
+patrol_radius = 100.0
+ai_behavior = 0
+drop_chance = 0.1
+exp_value = 10
+metadata/_custom_type_script = "uid://d1gtkfyn3juai"
+
+[sub_resource type="Resource" id="Resource_nfxmq"]
+script = ExtResource("3_8i024")
+weapon_name = "s"
+weapon_display_name = "s"
+id = 0
+description = ""
+weapon_type = 2
+rarity = 0
+magazine_size = 30
+current_magazine_ammo = 30
+fire_mode = 2
+burst_count = 3
+base_damage = 10.0
+extra_damage = 0.0
+fire_rate = 4.0
+click_rate = 1.0
+weapon_precision = 0.8
+weapon_precision_angle = 10.0
+bullet_size = 1.0
+attack_distance = 800.0
+bullet_speed = 1000.0
+ammo_type = 0
+damage_type = 0
+reload_time = 2.0
+needs_aiming = false
+projectile_type = 0
+special_effects = Array[String]([])
+metadata/_custom_type_script = "uid://dlt1l6gpxqnru"
+
+[sub_resource type="CapsuleShape2D" id="CapsuleShape2D_re5l2"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_re5l2"]
+radius = 25.0
+
+[sub_resource type="AnimationNodeStateMachine" id="AnimationNodeStateMachine_nfxmq"]
+
+[node name="Floating_Skeleton" type="CharacterBody2D"]
+scale = Vector2(2, 2)
+collision_layer = 2
+collision_mask = 77
+motion_mode = 1
+script = ExtResource("1_poon8")
+enemy_data = SubResource("Resource_8i024")
+using_weapon_data = SubResource("Resource_nfxmq")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("CapsuleShape2D_re5l2")
+
+[node name="Area2D" type="Area2D" parent="."]
+collision_layer = 2
+collision_mask = 16
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Area2D"]
+shape = SubResource("CircleShape2D_re5l2")
+
+[node name="Visuals" type="Node2D" parent="."]
+
+[node name="WeaponPivot" type="Node2D" parent="Visuals"]
+position = Vector2(-20, 0)
+
+[node name="Sprite2D" type="Sprite2D" parent="Visuals"]
+texture_filter = 1
+texture = ExtResource("1_re5l2")
+hframes = 6
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="Visuals"]
+root_node = NodePath("../..")
+
+[node name="AnimationTree" type="AnimationTree" parent="Visuals"]
+root_node = NodePath("../..")
+tree_root = SubResource("AnimationNodeStateMachine_nfxmq")

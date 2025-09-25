@@ -34,19 +34,22 @@ func initialize(p_data: BulletData,source:int=0):
 	# 设置子弹的初始位置和旋转
 	position = p_data.start_position
 	rotation = p_data.direction.angle()
-	
+	scale = Vector2(bullet_data.size,bullet_data.size)
 	# 激活子弹
 	self.visible = true
 	set_process(true)
 	match source:
 		0:
+			set_collision_layer_value(5,true)
 			set_collision_mask_value(2, true)
 			set_collision_mask_value(3, true)
 			set_collision_mask_value(7, true)
 		1:
+			set_collision_layer_value(8,true)
 			set_collision_mask_value(3, true)
 			set_collision_mask_value(7, true)
 		2:
+			set_collision_layer_value(8,true)
 			set_collision_mask_value(3, true)
 			set_collision_mask_value(2, true)
 			
@@ -57,9 +60,10 @@ func return_to_pool():
 	self.collision_mask = 0
 	returned_to_pool.emit(self)
 	
-func _on_body_entered(body):
+func _on_body_entered(area):
 	# 处理碰撞逻辑
-	if body.has_method("take_damage"):
-		body.take_damage(bullet_data.damage, bullet_data.special_info)
+	if area.get_parent().has_method("take_damage"):
+		print("成功命中")
+		area.get_parent().take_damage(bullet_data.damage, bullet_data.special_info)
 		
 	return_to_pool()

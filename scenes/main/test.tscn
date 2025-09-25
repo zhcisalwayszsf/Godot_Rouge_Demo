@@ -4,7 +4,7 @@
 [ext_resource type="PackedScene" uid="uid://cufqe8v166o1p" path="res://scenes/player/Player.tscn" id="1_h3hfy"]
 [ext_resource type="PackedScene" uid="uid://bvlnr5vdnrdg5" path="res://scenes/ui/PlayerHUD.tscn" id="2_bdhu5"]
 [ext_resource type="PackedScene" uid="uid://5ks3c4dmqhe0" path="res://scenes/buildings/Blacksmith.tscn" id="4_jbo7p"]
-[ext_resource type="PackedScene" uid="uid://68f77xuutfm0" path="res://scenes/enemies/Skeleton.tscn" id="5_pte8o"]
+[ext_resource type="PackedScene" uid="uid://68f77xuutfm0" path="res://scenes/enemies/Floating_Skeleton.tscn" id="5_pte8o"]
 [ext_resource type="PackedScene" uid="uid://1wprswq7ggtt" path="res://scenes/enemies/Monkey.tscn" id="6_x18ve"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_bdhu5"]
@@ -36,4 +36,4 @@ position = Vector2(1090, 302)
 position = Vector2(1581, 487)
 
 [node name="Monkey" parent="." instance=ExtResource("6_x18ve")]
-position = Vector2(1346, 673)
+position = Vector2(841, 451)

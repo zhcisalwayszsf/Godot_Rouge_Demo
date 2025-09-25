@@ -35,6 +35,7 @@ var burst_fire_left = 1
 # ================================
 func _ready():
 	equip_weapon()
+	init_timers()
 	health = enemy_data.max_health if enemy_data.max_health>0 else 100
 	armor = enemy_data.max_armor if enemy_data.max_armor>0 else 0
 	be_hurt.connect(
@@ -58,6 +59,26 @@ func _physics_process(delta: float) -> void:
 	if in_move:
 		handle_movement()
 
+func init_timers():
+	attack_timer = Timer.new()
+	attack_timer.one_shot = true
+	self.add_child(attack_timer)
+	attack_timer.timeout.connect(test)
+	attack_timer.wait_time = attack_time
+	
+	fire_timer = Timer.new()
+	self.add_child(fire_timer)
+	fire_timer.one_shot = false
+	fire_timer.timeout.connect(execute_fire)
+	fire_timer.wait_time = 0.2
+
+	burst_fire_timer = Timer.new()
+	add_child(burst_fire_timer)
+	burst_fire_timer.one_shot = true
+	burst_fire_timer.wait_time= 1
+	burst_fire_timer.timeout.connect(try_attack)
+	
+	
 #========
 func equip_weapon():
 	match enemy_data.enemy_type:
@@ -125,17 +146,15 @@ func handle_movement():
 func start_attack(time:float =-1 ):
 	if try_get_player():
 		is_aimming = true
-		attack_timer = TimerPool.create_one_shot_timer(
-			time if time>0 else attack_time,
-			func():
-				if fire_timer:
-					fire_timer.stop()
-					finish_attack()
-				)
+		attack_timer.wait_time = time if time>0 else attack_timer.wait_time
 		attack_timer.start()
 		try_attack()
 	else: 
 		print("未能开始攻击：未获取到玩家信息")
+func test():
+	if fire_timer:
+		fire_timer.stop()
+		finish_attack()
 
 func try_get_player()->bool:
 	if get_tree().get_nodes_in_group("player")[0]:
@@ -151,30 +170,24 @@ func get_player_position()->Vector2:
 
 
 func try_attack()->bool:
-	if not is_aimming:
-		return false
 	match enemy_data.enemy_type:
 		#用枪的
 		0,1,2:
 			if using_weapon_data:
 				match using_weapon_data.fire_mode:
 					0:
-						fire_timer = TimerPool.create_loop_timer(1/using_weapon_data.click_rate,execute_fire)
+						fire_timer.wait_time=(1/using_weapon_data.click_rate)
 						fire_timer.start()
-						return true
 					1:
-						fire_timer = TimerPool.create_loop_timer(1/using_weapon_data.fire_rate,execute_fire)
+						fire_timer.wait_time=(1/using_weapon_data.click_rate)
 						fire_timer.start()
-						return true
 					2:
 						burst_fire_left = using_weapon_data.burst_count -1 
 						execute_fire()
-						fire_timer = TimerPool.create_loop_timer(
-							1/using_weapon_data.fire_rate,
-							func():execute_burst_fire()
-							)
+						fire_timer.wait_time=(1/using_weapon_data.click_rate)
+						fire_timer.timeout.disconnect(execute_fire)
+						fire_timer.timeout.connect(execute_burst_fire)
 						fire_timer.start()
-						return true
 	return false
 
 func execute_burst_fire():
@@ -183,7 +196,6 @@ func execute_burst_fire():
 		execute_fire()
 	else:
 		fire_timer.stop()
-		burst_fire_timer =TimerPool.create_one_shot_timer(1/using_weapon_data.click_rate,try_attack)
 		burst_fire_timer.start()
 		
 

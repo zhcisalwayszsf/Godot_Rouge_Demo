@@ -6,6 +6,7 @@
 script = ExtResource("1_e52r6")
 weapon_name = "uzi"
 weapon_display_name = "uzi冲锋枪"
+id = 2
 description = "射速极快的冲锋枪"
 weapon_type = 0
 rarity = 0

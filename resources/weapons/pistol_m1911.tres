@@ -6,6 +6,7 @@
 script = ExtResource("1_rldyh")
 weapon_name = "pistol_m1911"
 weapon_display_name = "M1911手枪"
+id = 1
 description = "好用的手枪，比较均衡"
 weapon_type = 0
 rarity = 0

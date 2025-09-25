@@ -6,6 +6,7 @@ class_name WeaponData
 @export_group("基础信息")
 @export var weapon_name: String = ""
 @export var weapon_display_name: String = ""
+@export var id:int
 @export var description: String = ""
 @export_enum("枪械", "近战", "魔法", "投掷") var weapon_type: int = 0
 #@export_enum("无（普通）", "一次性", "诅咒", "多格占位型") var special_type: int = 0

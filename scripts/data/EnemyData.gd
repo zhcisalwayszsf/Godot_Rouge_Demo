@@ -5,7 +5,7 @@ class_name EnemyData
 @export var enemy_name: String = "小怪模板"
 @export var description: String = "大部分小怪的通用模板"
 @export_enum( "射手","重甲兵","法师", "辅助","近战兵") var enemy_type: int = 0
-
+@export var use_weapon:bool=true
 @export_group("基础属性") 
 @export var max_health: float = 50
 @export var max_armor: float = 50
