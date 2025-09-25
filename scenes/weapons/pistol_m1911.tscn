@@ -7,9 +7,8 @@
 size = Vector2(111, 61)
 
 [node name="pistol_m1911" type="Area2D"]
+scale = Vector2(0.75, 0.75)
 script = ExtResource("1_2ly0v")
-
-[node name="BasePoint" type="Node2D" parent="."]
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 position = Vector2(34.5, -18.5)

@@ -200,7 +200,7 @@ func play_sound(sound_name: String, category: String = "sfx", volume_modifier: f
 	"""播放音效"""
 	var audio_resource = load_audio_resource(sound_name, category)
 	if not audio_resource:
-		print("音效文件未找到: ", sound_name)
+		#print("音效文件未找到: ", sound_name)
 		return false
 	
 	var player = get_available_sfx_player()

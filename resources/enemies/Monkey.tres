@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="EnemyData" load_steps=2 format=3 uid="uid://be2yxjqu0d34i"]
+
+[ext_resource type="Script" uid="uid://d1gtkfyn3juai" path="res://scripts/data/EnemyData.gd" id="1_0gmmn"]
+
+[resource]
+script = ExtResource("1_0gmmn")
+enemy_name = "monkey"
+description = "小小猴子"
+enemy_type = 0
+max_health = 50
+max_armor = 50
+move_speed = 250.0
+attack_damage = 10
+attack_range = 900.0
+detection_range = 300.0
+attack_cooldown = 1.5
+patrol_radius = 100.0
+ai_behavior = 0
+drop_chance = 0.1
+exp_value = 10
+metadata/_custom_type_script = "uid://d1gtkfyn3juai"

@@ -252,7 +252,7 @@ func start_casting(slot: int, skill_data: SkillData, position: Vector2 = Vector2
 		is_casting_secondary = true
 		secondary_cast_timer.start(skill_data.cast_time)
 	
-	print("开始施法: ", skill_data.skill_name, " 施法时间: ", skill_data.cast_time)
+	#print("开始施法: ", skill_data.skill_name, " 施法时间: ", skill_data.cast_time)
 
 """修改处"""
 func finish_casting_primary():
@@ -327,7 +327,7 @@ func execute_skill(skill_data: SkillData, slot: int,  position: Vector2 = Vector
 		AudioSystem.play_skill_sound(skill_data.skill_name)
 		
 	start_cooldown(slot, final_skill_data)
-	print("释放技能: ", final_skill_data.skill_name, " 位置: ", position,"类型：", final_skill_data.get_skill_type_names())
+	#print("释放技能: ", final_skill_data.skill_name, " 位置: ", position,"类型：", final_skill_data.get_skill_type_names())
 
 # === 技能效果执行 ===
 ###伤害类
@@ -770,7 +770,7 @@ func get_all_enemies() -> Array:
 
 func create_skill_effect(effect_type: String, position: Vector2, skill_data: SkillData):
 	"""创建技能视觉效果"""
-	print("创建技能效果: ", effect_type, " 位置: ", position, " 技能: ", skill_data.skill_name)
+	#print("创建技能效果: ", effect_type, " 位置: ", position, " 技能: ", skill_data.skill_name)
 
 # === 冷却系统 ===
 func start_cooldown(slot:int,skill_data:SkillData):

@@ -11,6 +11,11 @@ extends CharacterBody2D
 var move_direction: Vector2 = Vector2.ZERO
 var base_move_speed: float = 300.0
 
+#动画相关
+@onready var animatorPlayer = $Visuals/AnimationPlayer
+@onready var animationrTree = $Visuals/AnimationTree
+var last_move_direction:Vector2 = Vector2.DOWN
+
 # 位移技能相关 - 重构后的结构
 var movement_state: MovementState = MovementState.NORMAL
 var dash_data: DashData = DashData.new()
@@ -77,6 +82,11 @@ func _ready():
 		if test_node_link.has_signal("test_weapon_component"):
 			test_node_link.test_weapon_component.connect(WeaponSystem.equip_weapon_component)
 
+
+
+func _process(delta: float) -> void:
+	pass
+
 func setup_player():
 	"""设置玩家基础属性"""
 	collision_layer = 1  # 玩家层
@@ -126,13 +136,15 @@ func _input(event):
 		var target_dir = (get_global_mouse_position() - global_position).normalized()
 		var success = SkillSystem.try_cast_primary_skill(global_position, target_dir)
 		if not success:
-			print("主技能释放失败 - 可能在冷却中或能量不足")
+			#print("主技能释放失败 - 可能在冷却中或能量不足")
+			pass
 	
 	if event.is_action_pressed("e"):
 		var target_dir = (get_global_mouse_position() - global_position).normalized()
 		var success = SkillSystem.try_cast_secondary_skill(global_position, target_dir)
 		if not success:
-			print("副技能释放失败 - 可能在冷却中")
+			#print("副技能释放失败 - 可能在冷却中")
+			pass
 	
 	# 游戏控制
 	if event.is_action_pressed("pause"):
@@ -148,7 +160,9 @@ func _physics_process(delta):
 		return
 
 	process_movement(delta)
-	update_visual_direction()
+	#update_visual_direction()
+	animationrTree.set("parameters/move/blend_position",velocity)
+	animationrTree.set("parameters/move/4/blend_position",last_move_direction)
 
 func process_movement(delta: float):
 	"""处理所有移动逻辑"""
@@ -163,7 +177,8 @@ func process_movement(delta: float):
 			velocity = Vector2.ZERO
 		_:
 			handle_normal_movement()
-	
+	if velocity.length() >=0.1:
+		last_move_direction = velocity
 	move_and_slide()
 
 func handle_normal_movement():
@@ -209,14 +224,6 @@ func get_input_direction() -> Vector2:
 func get_effective_move_speed() -> float:
 	"""获取有效移动速度（考虑状态效果）"""
 	return PlayerDataManager.get_final_move_speed()
-
-func update_visual_direction():
-	"""更新视觉方向"""
-	var mouse_pos = get_global_mouse_position()
-	if mouse_pos.x < global_position.x:
-		body_sprite.scale.x = -abs(body_sprite.scale.x)
-	else:
-		body_sprite.scale.x = abs(body_sprite.scale.x)
 
 # === 位移技能系统===
 

@@ -25,21 +25,9 @@ func load_weapon_data():
 	#print("loade_weapon调用者："+funcName+"\n")
 	"""自动加载同名的WeaponData文件"""
 	# 现在不重命名节点了，所以逻辑可以简化
-	var scene_file = ""
-	if scene_file_path != "":
-		scene_file = scene_file_path
-	else:
-		# 从节点名称推断（现在节点名称不会被重命名，所以这个方法可靠）
-		var node_name = name
-		scene_file = "res://scenes/weapons/" + node_name + ".tscn"
 	
-	if scene_file.is_empty():
-		print("错误: 无法确定武器场景文件路径")
-		create_fallback_weapon_data()
-		return
 	
-	var file_name = scene_file.get_file().get_basename()
-	var data_path = "res://resources/weapons/" + file_name + ".tres"
+	var data_path = WeaponList.get_weapon_by_name(name)["data_path"]
 	
 	print("尝试加载武器数据: ", data_path)
 	
@@ -50,7 +38,7 @@ func load_weapon_data():
 			print("已加载武器数据：", data_path)
 			# 确保 weapon_data 有正确的名称
 			if weapon_data.weapon_name.is_empty():
-				weapon_data.weapon_name = file_name
+				weapon_data.weapon_name = data_path.get_file().get_basename()
 		else:
 			print("错误: 加载的资源不是有效的WeaponData: ", data_path)
 			create_fallback_weapon_data()

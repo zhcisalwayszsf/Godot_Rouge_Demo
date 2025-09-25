@@ -1,5 +1,5 @@
 # res://scripts/ui/PlayerHUD.gd - 带拾取提示版本
-extends Control
+extends CanvasLayer
 class_name PlayerHUD
 
 # 血量和能量相关

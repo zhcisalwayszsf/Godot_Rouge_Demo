@@ -47,8 +47,8 @@ signal weapon_upgrade_applied(weapon_data: WeaponData, upgrade: String)
 signal weapon_unequipped(weapon_data: WeaponData, slot: int)
 
 func _ready():
-	print("WeaponSystem 初始化完成")
-
+	#print("WeaponSystem 初始化完成")
+	pass
 func _process(delta):
 	# 不再需要手动更新计时器
 	update_weapon_rotation()
@@ -124,7 +124,7 @@ func equip_weapon_component(weapon_node: WeaponComponent, slot: int) -> bool:
 		else:
 			remove_all_children(secondary_weapon)
 			secondary_weapon.add_child(weapon_node)
-		print("武器节点名称保持为: ", weapon_node.name)
+		#print("武器节点名称保持为: ", weapon_node.name)
 	
 	# 初始时隐藏非激活武器
 	if slot != active_weapon_slot:
@@ -238,8 +238,8 @@ func switch_weapon(slot: int):
 		click_cooldown_timer.stop()
 		click_cooldown_timer = null
 	is_firing = false
-	var active_weapon_data = get_active_weapon_data()
 	
+	var active_weapon_data = get_active_weapon_data()
 	if active_weapon_data:
 		weapon_switched.emit(active_weapon_data, slot)
 		print("切换武器: 槽位 ", old_slot, " -> ", slot, " (", active_weapon_data.weapon_name, ")")
@@ -257,11 +257,11 @@ func update_weapon_visibility():
 func set_weapon_father_node_visibility(slot:int,boolvalue:bool):
 	if slot==0:
 		primary_weapon.visible=boolvalue
-		print("设置主武器父节点可见性")
+		#print("设置主武器父节点可见性")
 		return
 	elif slot==1:
 		secondary_weapon.visible=boolvalue
-		print("设置副武器父节点可见性")
+		#print("设置副武器父节点可见性")
 		return
 	else:
 		print("警告：设置武器父节点可见性失败")
@@ -444,7 +444,7 @@ func cancel_burst_fire():
 		burst_cooldown_timer.stop()
 		burst_cooldown_timer = null
 	
-	print("爆发射击被取消")
+	#print("爆发射击被取消")
 
 func try_fire() -> bool:
 	"""尝试开火"""
@@ -529,7 +529,8 @@ func execute_fire(weapon_data: WeaponData, weapon_component: WeaponComponent):
 	var bullet_data = Bullet.BulletData.new()
 	bullet_data.damage = WeaponDamageSystem.calculate_weapon_damage(active_weapon_slot)
 	bullet_data.travel_range = weapon_data.attack_distance
-	bullet_data.speed = 1000 # 可以根据武器类型调整
+	bullet_data.speed = weapon_data.bullet_speed
+	bullet_data.size = weapon_data.bullet_size # 可以根据武器类型调整
 	var direction = (PlayerDataManager.player_node.get_global_mouse_position() - muzzle_point.global_position).normalized()
 	bullet_data.direction = get_weapon_precision(weapon_data,direction)
 	bullet_data.start_position = muzzle_point.global_position
@@ -550,7 +551,7 @@ func execute_fire(weapon_data: WeaponData, weapon_component: WeaponComponent):
 	if AudioSystem:
 		AudioSystem.play_weapon_sound(weapon_data.weapon_name + "_fire")
 	
-	print("武器开火: ", weapon_data.weapon_name, " 剩余弹匣: ", get_active_magazine_ammo())
+	#print("武器开火: ", weapon_data.weapon_name, " 剩余弹匣: ", get_active_magazine_ammo())
 
 # === 弹药管理 ===
 

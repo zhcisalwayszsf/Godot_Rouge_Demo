@@ -27,7 +27,7 @@ func _process(delta):
 	if (position - bullet_data.start_position).length() > bullet_data.travel_range:
 		return_to_pool()
 	
-func initialize(p_data: BulletData):
+func initialize(p_data: BulletData,source:int=0):
 	"""使用传入的 BulletData 初始化子弹"""
 	self.bullet_data = p_data
 	
@@ -38,17 +38,23 @@ func initialize(p_data: BulletData):
 	# 激活子弹
 	self.visible = true
 	set_process(true)
-	set_collision_mask_value(2, true)
-	set_collision_mask_value(3, true)
-	set_collision_mask_value(7, true)
-	
+	match source:
+		0:
+			set_collision_mask_value(2, true)
+			set_collision_mask_value(3, true)
+			set_collision_mask_value(7, true)
+		1:
+			set_collision_mask_value(3, true)
+			set_collision_mask_value(7, true)
+		2:
+			set_collision_mask_value(3, true)
+			set_collision_mask_value(2, true)
+			
 func return_to_pool():
 	"""归还子弹到对象池"""
 	self.visible = false
 	set_process(false)
-	set_collision_mask_value(2, false)
-	set_collision_mask_value(3, false)
-	set_collision_mask_value(7, false)
+	self.collision_mask = 0
 	returned_to_pool.emit(self)
 	
 func _on_body_entered(body):

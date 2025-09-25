@@ -24,7 +24,7 @@ func create_new_bullet() -> Bullet:
 	new_bullet.set_collision_mask_value(7, false)
 	return new_bullet
 
-func get_bullet(p_data: Bullet.BulletData) -> Bullet:
+func get_bullet(p_data: Bullet.BulletData,source:int=0) -> Bullet:
 	"""从对象池获取一个子弹实例并进行初始化"""
 	var bullet: Bullet
 	
@@ -36,7 +36,7 @@ func get_bullet(p_data: Bullet.BulletData) -> Bullet:
 		bullet = create_new_bullet()
 	
 	# 使用传入的数据初始化子弹
-	bullet.initialize(p_data)
+	bullet.initialize(p_data,source)
 	
 	return bullet
 

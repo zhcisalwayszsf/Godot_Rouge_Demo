@@ -1,0 +1,23 @@
+[gd_scene load_steps=3 format=3 uid="uid://5ks3c4dmqhe0"]
+
+[ext_resource type="Texture2D" uid="uid://dkjn77fuqfplh" path="res://assets/buildings/blacksmith.png" id="1_01ff7"]
+
+[sub_resource type="CapsuleShape2D" id="CapsuleShape2D_2y5re"]
+radius = 26.0
+height = 318.0
+
+[node name="Blacksmith" type="StaticBody2D"]
+collision_layer = 4
+collision_mask = 0
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+y_sort_enabled = true
+texture_filter = 1
+position = Vector2(30, -73)
+texture = ExtResource("1_01ff7")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+y_sort_enabled = true
+position = Vector2(0, -25)
+rotation = 1.5708
+shape = SubResource("CapsuleShape2D_2y5re")

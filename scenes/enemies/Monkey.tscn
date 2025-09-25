@@ -1,0 +1,66 @@
+[gd_scene load_steps=8 format=3 uid="uid://1wprswq7ggtt"]
+
+[ext_resource type="Script" uid="uid://brjs7q186p2ev" path="res://scripts/enemies/base_enemies.gd" id="1_l8146"]
+[ext_resource type="Script" uid="uid://d1gtkfyn3juai" path="res://scripts/data/EnemyData.gd" id="2_eccbf"]
+[ext_resource type="Texture2D" uid="uid://dithfprgumf0u" path="res://icon.svg" id="2_ilkc4"]
+
+[sub_resource type="Resource" id="Resource_3k45u"]
+script = ExtResource("2_eccbf")
+enemy_name = "monkey"
+description = "超雄小猴子"
+enemy_type = 0
+max_health = 50.0
+max_armor = 50.0
+move_speed = 150.0
+attack_damage = 10.0
+attack_distance = 1000.0
+detection_range = 300.0
+attack_cooldown = 1.5
+patrol_radius = 100.0
+ai_behavior = 0
+drop_chance = 0.1
+exp_value = 10
+metadata/_custom_type_script = "uid://d1gtkfyn3juai"
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_ix64g"]
+custom_solver_bias = 1.0
+radius = 50.0
+
+[sub_resource type="AnimationNodeStateMachine" id="AnimationNodeStateMachine_t5fmx"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_u8b2p"]
+radius = 96.0
+
+[node name="Monkey" type="CharacterBody2D"]
+scale = Vector2(0.5, 0.5)
+collision_layer = 2
+collision_mask = 94
+motion_mode = 1
+script = ExtResource("1_l8146")
+equipped_weapon_id = 2
+enemy_data = SubResource("Resource_3k45u")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("CircleShape2D_ix64g")
+
+[node name="Visuals" type="Node2D" parent="."]
+
+[node name="WeaponPivot" type="Node2D" parent="Visuals"]
+position = Vector2(40, 25)
+
+[node name="Body" type="Sprite2D" parent="Visuals"]
+y_sort_enabled = true
+texture_filter = 1
+texture = ExtResource("2_ilkc4")
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="Visuals"]
+
+[node name="AnimationTree" type="AnimationTree" parent="Visuals"]
+tree_root = SubResource("AnimationNodeStateMachine_t5fmx")
+
+[node name="AudioEffects" type="Node2D" parent="."]
+
+[node name="Area2D" type="Area2D" parent="."]
+
+[node name="CollisionShape2D2" type="CollisionShape2D" parent="Area2D"]
+shape = SubResource("CircleShape2D_u8b2p")

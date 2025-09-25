@@ -10,6 +10,8 @@ class_name WeaponData
 @export_enum("枪械", "近战", "魔法", "投掷") var weapon_type: int = 0
 #@export_enum("无（普通）", "一次性", "诅咒", "多格占位型") var special_type: int = 0
 @export_enum("普通", "稀有", "史诗", "传说") var rarity: int = 0
+@export var magazine_size: int = 30  # 弹匣容量，-1表示无限制
+@export var current_magazine_ammo: int = 30  # 当前弹夹子弹数（运行时数据）
 @export_enum("单发","连发","三连发") var fire_mode:int = 0
 @export var burst_count: int = 3 # 如果是三连发，每次发射的子弹数
 
@@ -27,11 +29,10 @@ class_name WeaponData
 @export_enum("普通子弹", "特殊子弹", "箭矢", "魔力精华", "无消耗") var ammo_type: int = 0
 @export_enum("普通", "穿甲", "燃烧", "中毒", "百分比") var damage_type: int = 0
 @export var reload_time: float = 2.0  # 换弹时间（秒）
-@export var current_magazine_ammo: int = 30  # 当前弹夹子弹数（运行时数据）
+
 
 # 特殊机制
 @export_group("特殊机制")
 @export var needs_aiming: bool = false
 @export_enum("直线", "抛物线", "追踪","穿透") var projectile_type: int = 0
-@export var magazine_size: int = 30  # 弹匣容量，-1表示无限制
 @export var special_effects: Array[String] = []
