@@ -1,6 +1,7 @@
 extends Node2D
 
 var test_weapon
+var test_weapon2
 var weapon_instance
 var test_skill
 
@@ -10,6 +11,7 @@ signal test_weapon_component(weapon_component: WeaponComponent, slot: int)
 func _ready():
 	GameManager.change_state(GameManager.GameState.PLAYING)
 	test_weapon =preload("res://scenes/weapons/uzi.tscn")
+	test_weapon2 =preload("res://scenes/weapons/pistol_ice.tscn")
 	test_skill =load("res://resources/skills/SecondarySkill/TestDash.tres") as SkillData
 	
 

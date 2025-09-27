@@ -6,7 +6,7 @@ extends CharacterBody2D
 @export var equipped_weapon_id:int
 @export var equipped_weapon_name:String
 @export var enemy_data:EnemyData
-
+@export var has_armor:bool=true
 signal be_hurt()
 
 var player:CharacterBody2D
@@ -14,11 +14,21 @@ var player:CharacterBody2D
 var health:float
 var armor:float
 
+enum stat{
+		partol,#巡逻
+		alart,#警戒
+		target_player,#索敌
+		path_find,#寻路
+		flee,#逃跑
+		controlled#被控
+		}
+
+
 @export var using_weapon_data:WeaponData
 var using_weapon:WeaponComponent
 var move_direction:Vector2 = Vector2.ZERO
 var last_move_direction:Vector2 = Vector2.ZERO
-var move_speed:float
+var move_speed:float =150
 var in_move:bool=false
 var damage_multiplier:float=1
 
@@ -34,20 +44,26 @@ var burst_fire_timer:Timer = null
 var burst_fire_left = 1
 # ================================
 func _ready():
-	equip_weapon()
+	"""初始化信息"""
 	health = enemy_data.max_health if enemy_data.max_health>0 else 100
 	armor = enemy_data.max_armor if enemy_data.max_armor>0 else 0
+	move_speed = enemy_data.move_speed
+	equip_weapon()
+	#链接受伤信号节省资源
 	be_hurt.connect(
 		func():
 			print(health)
 			self.handle_die()
 			)
 	#print(enemy_data.enemy_name)
+	#设置碰撞层，添加到敌人组
 	set_collision_layer_value(2,true)
+	set_collision_mask_value(2,true)
 	self.add_to_group("enemies")
 	
+	#测试代码
 	start_attack(10)
-	
+	in_move=true
 
 func _process(delta: float) -> void:
 	pass
@@ -60,6 +76,7 @@ func _physics_process(delta: float) -> void:
 
 #========
 func equip_weapon():
+	"""根据类型，选择是否装备武器，武器id和name二选一"""
 	match enemy_data.enemy_type:
 		0,1,2:
 			if enemy_data.use_weapon:
@@ -86,10 +103,9 @@ func equip_weapon():
 		_:
 			pass
 
-
-
 func update_weapon_rotation():
 	"""更新武器旋转"""
+	#没有武器节点则返回
 	if not weapon_pivot:
 		return
 	var angle 
@@ -115,14 +131,21 @@ func update_weapon_rotation():
 			weapon_pivot.scale.y = 1
 
 func handle_movement():
-	if velocity.length() >0.1:
-		last_move_direction = velocity
+	"""处理移动"""
+	#确保获取了玩家节点
+	if not try_get_player():
+		return
+		
+	var direction = (get_player_position() - global_position).normalized()
+	
+	if direction.length() >0.1:
+		last_move_direction = direction
+	velocity = direction * move_speed
 	move_and_slide()
-
-
 
 #====攻击模块====
 func start_attack(time:float =-1 ):
+	"""开始攻击"""
 	if try_get_player():
 		is_aimming = true
 		attack_timer = TimerPool.create_one_shot_timer(
@@ -138,6 +161,7 @@ func start_attack(time:float =-1 ):
 		print("未能开始攻击：未获取到玩家信息")
 
 func try_get_player()->bool:
+	"""获取玩家节点"""
 	if get_tree().get_nodes_in_group("player")[0]:
 		player  = get_tree().get_nodes_in_group("player")[0]
 		return true
@@ -145,12 +169,14 @@ func try_get_player()->bool:
 		return false
 
 func get_player_position()->Vector2:
-	player_position = player.global_position
+	"""更新玩家全局位置"""
+	player_position = player.get_node("Area2D").global_position
 	#print(player_position)
 	return player_position
-
-
+	
+#尝试开火
 func try_attack()->bool:
+	"""尝试开火攻击"""
 	if not is_aimming:
 		return false
 	match enemy_data.enemy_type:
@@ -177,6 +203,7 @@ func try_attack()->bool:
 						return true
 	return false
 
+#多连发方法
 func execute_burst_fire():
 	if burst_fire_left >0:
 		burst_fire_left -= 1
@@ -185,11 +212,12 @@ func execute_burst_fire():
 		fire_timer.stop()
 		burst_fire_timer =TimerPool.create_one_shot_timer(1/using_weapon_data.click_rate,try_attack)
 		burst_fire_timer.start()
-		
 
 func execute_fire():
+	"""开火发射子弹"""
 	#获取子弹发射初始位置
 	var muzzle_point
+	#根据是否装备武器来设置子弹发射点
 	if enemy_data.use_weapon:
 		muzzle_point = using_weapon.muzzle_point
 		if not muzzle_point:
@@ -197,6 +225,7 @@ func execute_fire():
 			return
 	else:
 		muzzle_point = weapon_pivot
+		
 	#根据玩家坐标生成子弹飞行方向
 	aim_direction = (get_player_position() - muzzle_point.global_position).normalized()
 	#设置将要实例化的子弹携带的数据
@@ -216,15 +245,16 @@ func execute_fire():
 		print("警告：无法从对象池获取子弹实例")
 		return
 
-
 func finish_attack():
 	is_aimming = false
 	pass
+#====随机状态机====
 
 #====受伤====
 func take_damage(damage:float,special_info:Dictionary={}):
 	#有甲先扣甲
-	print("************")
+	if not has_armor:
+		return
 	if armor > 0:
 		armor = armor-damage 
 		#甲不足按余量扣血
@@ -240,15 +270,14 @@ func take_damage(damage:float,special_info:Dictionary={}):
 	
 #====死亡====
 func handle_die():
-
 #先返还射击计时器
-	if attack_timer:
-		attack_timer.timeout.emit()
+	if health <=0:
+		if attack_timer:
+			attack_timer.timeout.emit()
 		#TimerPool.return_timer(attack_timer)
-	if fire_timer:
-		fire_timer.stop()
-		TimerPool.return_timer(fire_timer)
+		if fire_timer:
+			fire_timer.stop()
+			TimerPool.return_timer(fire_timer)
 		#AudioSystem.play_sound("enermy_die")
 		#play_die_effect()
-	self.queue_free()
-		
+		self.queue_free()

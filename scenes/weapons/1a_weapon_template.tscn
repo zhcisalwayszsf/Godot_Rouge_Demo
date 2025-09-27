@@ -1,0 +1,27 @@
+[gd_scene load_steps=4 format=3 uid="uid://khxb3ney3c52"]
+
+[ext_resource type="Script" uid="uid://yicyd5wrlt6k" path="res://scripts/weapons/Weapon.gd" id="1_wiac0"]
+[ext_resource type="Texture2D" uid="uid://bmfkrttrgb8lf" path="res://assets/weapons/ice_handgun.png" id="2_wiac0"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_5egnq"]
+size = Vector2(62.6667, 45.3333)
+
+[node name="pistol_ice" type="Area2D"]
+scale = Vector2(0.75, 0.75)
+collision_layer = 0
+collision_mask = 0
+script = ExtResource("1_wiac0")
+weapon_ID = 3
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+position = Vector2(20.6667, -16)
+shape = SubResource("RectangleShape2D_5egnq")
+
+[node name="MuzzlePoint" type="Node2D" parent="."]
+position = Vector2(48, -30)
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+texture_filter = 1
+position = Vector2(20, -14.6667)
+scale = Vector2(-0.5, 0.5)
+texture = ExtResource("2_wiac0")

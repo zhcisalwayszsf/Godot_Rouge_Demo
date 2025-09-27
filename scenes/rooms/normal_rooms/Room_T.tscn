@@ -1,0 +1,19 @@
+[gd_scene load_steps=2 format=3 uid="uid://cabjkivxm7o8m"]
+
+[sub_resource type="TileSet" id="TileSet_30ddr"]
+
+[node name="Room_T" type="Node2D"]
+y_sort_enabled = true
+
+[node name="TileMapLayer" type="TileMapLayer" parent="."]
+tile_set = SubResource("TileSet_30ddr")
+
+[node name="StaticBody2D" type="StaticBody2D" parent="."]
+position = Vector2(0, 544)
+collision_layer = 8
+
+[node name="CollisionPolygon2D" type="CollisionPolygon2D" parent="StaticBody2D"]
+polygon = PackedVector2Array(-64, -1088, -864, -1088, -864, 0, 864, 0, 864, -1088, 64, -1088, 64, -1024, 800, -1024, 800, -64, -800, -64, -800, -1024, -64, -1024)
+
+[node name="Base_Point" type="Node2D" parent="."]
+position = Vector2(0, -512)

@@ -6,6 +6,7 @@ extends CharacterBody2D
 @onready var weapon_pivot = $Visuals/WeaponPivot
 @onready var skill_pivot = $SkillPivot
 @onready var collision_shape = $CollisionShape2D
+@onready var area:Area2D = $Area2D
 
 # 移动相关
 var move_direction: Vector2 = Vector2.ZERO
@@ -26,6 +27,10 @@ var status_effects: StatusEffects = StatusEffects.new()
 # 原始碰撞层设置
 var original_collision_layer: int
 var original_collision_mask: int
+
+# 原始碰撞层设置
+var original_area_collision_layer: int
+var original_area_collision_mask: int
 
 # 信号
 signal health_changed(current: int, max: int)
@@ -85,17 +90,25 @@ func _ready():
 
 
 func _process(delta: float) -> void:
+
 	pass
 
 func setup_player():
 	"""设置玩家基础属性"""
 	collision_layer = 1  # 玩家层
-	collision_mask = 2 | 3 | 4 | 5 | 6 | 7 
-	# 敌人层 | 墙壁层 | 空气墙 | 拾取物层 | 特殊敌人
+	collision_mask = 334
+	#collision_mask = 2 | 3 | 4 | 7 | 9 
+	# 敌人层 | 墙壁层 | 实体墙 | 空气墙 | 特殊敌人 |
+	
+	area.collision_layer = 1
+	area.collision_mask = 128
 	
 	# 保存原始碰撞设置
 	original_collision_layer = collision_layer
 	original_collision_mask = collision_mask
+	
+	original_area_collision_layer = area.collision_layer
+	original_area_collision_mask = area.collision_mask
 
 func connect_system_signals():
 	"""连接系统信号"""
@@ -306,13 +319,14 @@ func set_no_collision(duration: float = 0.0, no_collision: bool = true):
 		#print("玩家进入无碰撞状态，持续时间: ", duration)
 		
 		# 修改碰撞层
-		var no_need_layer = (1<<2) | (1<<3) | (1<<5) | (1<<7)
-		collision_mask = collision_mask & ~no_need_layer
 		
+		collision_mask = 0
+		area.collision_layer = 0
 		# 使用TimerPool的便捷方法
 		var no_collision_timer  =TimerPool.create_one_shot_timer(duration, func():
 			status_effects.has_no_collision = false
 			collision_mask = original_collision_mask
+			area.collision_layer = original_area_collision_layer
 			#print("玩家无碰撞状态结束")
 		)
 		no_collision_timer.start()
@@ -373,9 +387,9 @@ func apply_slow(duration: float, slow_factor: float):
 	#print("玩家被减速，减速系数: ", slow_factor, " 持续时间: ", duration)
 
 # === 伤害系统 ===
-
+'''
 func take_damage(damage: int, damage_type: int = 0):
-	"""承受伤害 - 适配新的伤害类型系统"""
+	#承受伤害 - 适配新的伤害类型系统
 	if status_effects.is_invulnerable:
 		#print("玩家处于无敌状态，免疫伤害")
 		return
@@ -390,7 +404,7 @@ func take_damage(damage: int, damage_type: int = 0):
 	
 	if was_killed:
 		handle_death()
-
+'''
 func calculate_damage_by_type(base_damage: int, damage_type: int) -> int:
 	"""根据伤害类型计算实际伤害"""
 	var actual_damage = base_damage

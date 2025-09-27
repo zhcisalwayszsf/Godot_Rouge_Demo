@@ -1,0 +1,28 @@
+[gd_scene load_steps=4 format=3 uid="uid://kel13v5wdjic"]
+
+[ext_resource type="Script" uid="uid://yicyd5wrlt6k" path="res://scripts/weapons/Weapon.gd" id="1_vwer1"]
+[ext_resource type="Texture2D" uid="uid://c4mgpiys1u5cq" path="res://assets/weapons/smg_pistol.png" id="2_vwer1"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_5egnq"]
+size = Vector2(96, 48)
+
+[node name="smg_pistol" type="Area2D"]
+collision_layer = 0
+collision_mask = 0
+script = ExtResource("1_vwer1")
+weapon_ID = 4
+weapon_name = "smg_pistol"
+metadata/_edit_vertical_guides_ = [-48.0]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+position = Vector2(16, 0)
+shape = SubResource("RectangleShape2D_5egnq")
+
+[node name="MuzzlePoint" type="Node2D" parent="."]
+position = Vector2(64, -16)
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+texture_filter = 1
+position = Vector2(16, 0)
+scale = Vector2(-1.5, 1.5)
+texture = ExtResource("2_vwer1")

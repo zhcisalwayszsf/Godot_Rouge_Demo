@@ -6,9 +6,7 @@
 [ext_resource type="PackedScene" uid="uid://5ks3c4dmqhe0" path="res://scenes/buildings/Blacksmith.tscn" id="4_jbo7p"]
 [ext_resource type="PackedScene" uid="uid://68f77xuutfm0" path="res://scenes/enemies/Floating_Skeleton.tscn" id="5_pte8o"]
 [ext_resource type="PackedScene" uid="uid://1wprswq7ggtt" path="res://scenes/enemies/Monkey.tscn" id="6_x18ve"]
-
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_bdhu5"]
-size = Vector2(222, 200)
+[ext_resource type="PackedScene" uid="uid://cg6plt16s4kqb" path="res://scenes/rooms/normal_rooms/Room_LRT.tscn" id="7_xxkn1"]
 
 [node name="Node2D" type="Node2D"]
 y_sort_enabled = true
@@ -17,19 +15,12 @@ script = ExtResource("1_bdhu5")
 [node name="PlayerHUD" parent="." instance=ExtResource("2_bdhu5")]
 
 [node name="Player" parent="." instance=ExtResource("1_h3hfy")]
-position = Vector2(1041, 489)
+position = Vector2(1696, 432)
 
 [node name="Camera2D" type="Camera2D" parent="Player"]
+zoom = Vector2(1.25, 1.25)
 
-[node name="StaticBody2D" type="StaticBody2D" parent="."]
-collision_layer = 4
-collision_mask = 0
-
-[node name="CollisionShape2D" type="CollisionShape2D" parent="StaticBody2D"]
-position = Vector2(607, 459)
-shape = SubResource("RectangleShape2D_bdhu5")
-
-[node name="Node2D" parent="." instance=ExtResource("4_jbo7p")]
+[node name="Blacksmith" parent="." instance=ExtResource("4_jbo7p")]
 position = Vector2(1090, 302)
 
 [node name="Skeleton" parent="." instance=ExtResource("5_pte8o")]
@@ -37,3 +28,9 @@ position = Vector2(1581, 487)
 
 [node name="Monkey" parent="." instance=ExtResource("6_x18ve")]
 position = Vector2(841, 451)
+
+[node name="Room_LRT" parent="." instance=ExtResource("7_xxkn1")]
+position = Vector2(1064, 456)
+
+[node name="Room_LRT2" parent="." instance=ExtResource("7_xxkn1")]
+position = Vector2(2728, 456)

@@ -1,11 +1,10 @@
-[gd_scene load_steps=31 format=3 uid="uid://cufqe8v166o1p"]
+[gd_scene load_steps=32 format=3 uid="uid://cufqe8v166o1p"]
 
 [ext_resource type="Script" uid="uid://c7v57hbnpwrou" path="res://Player.gd" id="1_gfjak"]
 [ext_resource type="Texture2D" uid="uid://cc8ypicvevfbt" path="res://assets/player/charwalk.png" id="2_gfjak"]
 
-[sub_resource type="CircleShape2D" id="CircleShape2D_ix64g"]
-custom_solver_bias = 1.0
-radius = 20.0
+[sub_resource type="CircleShape2D" id="CircleShape2D_gfjak"]
+radius = 64.0
 
 [sub_resource type="Animation" id="Animation_4kuee"]
 length = 0.001
@@ -458,18 +457,26 @@ states/move/node = SubResource("AnimationNodeBlendSpace2D_npwbq")
 states/move/position = Vector2(534, 100)
 transitions = ["Start", "move", SubResource("AnimationNodeStateMachineTransition_rn7t0")]
 
+[sub_resource type="CapsuleShape2D" id="CapsuleShape2D_gfjak"]
+radius = 5.0
+height = 32.0
+
 [node name="Player" type="CharacterBody2D"]
 scale = Vector2(0.5, 0.5)
-collision_mask = 126
+collision_mask = 334
 motion_mode = 1
 script = ExtResource("1_gfjak")
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
-scale = Vector2(3, 3)
-shape = SubResource("CircleShape2D_ix64g")
+[node name="Area2D" type="Area2D" parent="."]
+position = Vector2(0, -48)
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Area2D"]
+shape = SubResource("CircleShape2D_gfjak")
 
 [node name="Visuals" type="Node2D" parent="."]
 y_sort_enabled = true
+position = Vector2(0, -38)
 
 [node name="WeaponPivot" type="Node2D" parent="Visuals"]
 position = Vector2(-40, 25)
@@ -500,8 +507,16 @@ parameters/move/blend_position = Vector2(-0.00191206, -0.0224215)
 parameters/move/4/blend_position = Vector2(-0.00191206, 0.0134529)
 
 [node name="AudioEffects" type="Node2D" parent="."]
+position = Vector2(0, -38)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+position = Vector2(0, -5)
+rotation = 1.5708
+scale = Vector2(3, 3)
+shape = SubResource("CapsuleShape2D_gfjak")
 
 [node name="SkillPivot" type="Node2D" parent="."]
+position = Vector2(0, -38)
 
 [node name="PrimarySkill" type="Node2D" parent="SkillPivot"]
 

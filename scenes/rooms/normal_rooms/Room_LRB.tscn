@@ -1,0 +1,42 @@
+[gd_scene load_steps=2 format=3 uid="uid://h7pplkowfu15"]
+
+[sub_resource type="TileSet" id="TileSet_30ddr"]
+
+[node name="RoomLRB" type="Node2D"]
+y_sort_enabled = true
+
+[node name="TileMapLayer" type="TileMapLayer" parent="."]
+tile_set = SubResource("TileSet_30ddr")
+
+[node name="StaticBody2D" type="StaticBody2D" parent="."]
+position = Vector2(0, 512)
+collision_layer = 8
+collision_mask = 0
+
+[node name="CollisionPolygon2D" type="CollisionPolygon2D" parent="StaticBody2D"]
+polygon = PackedVector2Array(-864, -576, -864, -1056, 864, -1056, 864, -576, 800, -576, 800, -992, -800, -992, -800, -576)
+
+[node name="StaticBody2D2" type="StaticBody2D" parent="."]
+position = Vector2(0, 512)
+collision_layer = 8
+collision_mask = 0
+
+[node name="CollisionPolygon2D" type="CollisionPolygon2D" parent="StaticBody2D2"]
+polygon = PackedVector2Array(-64, 32, -864, 32, -864, -448, -800, -448, -800, -32, -64, -32)
+
+[node name="StaticBody2D3" type="StaticBody2D" parent="."]
+position = Vector2(0, 512)
+collision_layer = 8
+collision_mask = 0
+
+[node name="CollisionPolygon2D" type="CollisionPolygon2D" parent="StaticBody2D3"]
+polygon = PackedVector2Array(864, -448, 864, 32, 64, 32, 64, -32, 800, -32, 800, -448)
+
+[node name="Base_Point_B" type="Node2D" parent="."]
+position = Vector2(0, 512)
+
+[node name="Base_Point_L" type="Node2D" parent="."]
+position = Vector2(-832, 0)
+
+[node name="Base_Point_R" type="Node2D" parent="."]
+position = Vector2(832, 0)

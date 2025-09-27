@@ -8,7 +8,11 @@ size = Vector2(111, 61)
 
 [node name="pistol_m1911" type="Area2D"]
 scale = Vector2(0.75, 0.75)
+collision_layer = 0
+collision_mask = 0
 script = ExtResource("1_2ly0v")
+weapon_ID = 1
+weapon_name = "pistol_m1911"
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 position = Vector2(34.5, -18.5)

@@ -16,9 +16,15 @@ static var weapons_by_id={
 	},
 	3:{
 		"id":3,
-		"name":"null",
-		"data_path":"res://resources/weapons/.tres",
-		"tscn_path":"res://scenes/weapons/.tscn"
+		"name":"pistol_ice",
+		"data_path":"res://resources/weapons/pistol_ice.tres",
+		"tscn_path":"res://scenes/weapons/pistol_ice.tscn"
+	},
+	4:{
+		"id":4,
+		"name":"smg_pistol",
+		"data_path":"res://resources/weapons/smg_pistol.tres",
+		"tscn_path":"res://scenes/weapons/smg_pistol.tscn"
 	}
 }
 static func _int_name_dict()->Dictionary:

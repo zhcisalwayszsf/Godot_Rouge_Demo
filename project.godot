@@ -12,6 +12,7 @@ config_version=5
 
 config/name="rougue"
 run/main_scene="uid://bj4ndy3u1105l"
+run/enable_alt_space_menu=true
 config/features=PackedStringArray("4.4", "Forward Plus")
 config/icon="res://icon.svg"
 
@@ -126,8 +127,14 @@ space={
 2d_physics/layer_1="player"
 2d_physics/layer_2="enemy"
 2d_physics/layer_3="wall"
-2d_physics/layer_4="air_wall"
+2d_physics/layer_4="real_wall"
 2d_physics/layer_5="ammo"
 2d_physics/layer_6="pickup"
 2d_physics/layer_7="special_enemy"
 2d_physics/layer_8="enemy_ammo"
+2d_physics/layer_9="air_wall"
+
+[physics]
+
+common/physics_ticks_per_second=120
+common/max_physics_steps_per_frame=16

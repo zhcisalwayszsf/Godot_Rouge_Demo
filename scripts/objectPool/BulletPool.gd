@@ -19,9 +19,7 @@ func create_new_bullet() -> Bullet:
 	new_bullet.returned_to_pool.connect(return_bullet)
 	new_bullet.visible = false
 	new_bullet.set_process(false)
-	new_bullet.set_collision_mask_value(2, false)
-	new_bullet.set_collision_mask_value(3, false)
-	new_bullet.set_collision_mask_value(7, false)
+
 	return new_bullet
 
 func get_bullet(p_data: Bullet.BulletData,source:int=0) -> Bullet:

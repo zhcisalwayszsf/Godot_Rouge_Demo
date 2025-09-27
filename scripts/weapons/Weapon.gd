@@ -11,7 +11,8 @@ var weapon_data: WeaponData
 @onready var shell_eject_point: Node2D = $ShellEjectPoint if has_node("ShellEjectPoint") else null
 @onready var collision_shape: CollisionShape2D = $CollisionShape2D if has_node("CollisionShape2D") else null
 
-
+@export var weapon_ID:int
+@export var weapon_name:String
 func _init() -> void:
 	#print("开始实例化武器")
 	return

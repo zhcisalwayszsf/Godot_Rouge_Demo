@@ -540,6 +540,8 @@ func execute_fire(weapon_data: WeaponData, weapon_component: WeaponComponent):
 	
 	# Step 2: 从对象池获取子弹，并将数据传递给它
 	var bullet = BulletPool.get_bullet(bullet_data)
+	#print(bullet.collision_mask)
+	#print(bullet.collision_layer)
 	if not bullet:
 		print("警告：无法从对象池获取子弹实例")
 		return

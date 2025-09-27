@@ -1,0 +1,32 @@
+[gd_resource type="Resource" script_class="WeaponData" load_steps=2 format=3 uid="uid://btiklxbwmpejk"]
+
+[ext_resource type="Script" uid="uid://dlt1l6gpxqnru" path="res://scripts/data/WeaponData.gd" id="1_61cdy"]
+
+[resource]
+script = ExtResource("1_61cdy")
+weapon_name = "smg_pistol"
+weapon_display_name = "奇怪的冲锋枪"
+id = 0
+description = "奇怪的冲锋枪"
+weapon_type = 0
+rarity = 0
+magazine_size = 30
+current_magazine_ammo = 30
+fire_mode = 1
+burst_count = 3
+base_damage = 10.0
+extra_damage = 0.0
+fire_rate = 3.0
+click_rate = 2.0
+weapon_precision = 0.8
+weapon_precision_angle = 10.0
+bullet_size = 1.0
+attack_distance = 9000.0
+bullet_speed = 900.0
+ammo_type = 0
+damage_type = 0
+reload_time = 2.0
+needs_aiming = false
+projectile_type = 0
+special_effects = Array[String]([])
+metadata/_custom_type_script = "uid://dlt1l6gpxqnru"

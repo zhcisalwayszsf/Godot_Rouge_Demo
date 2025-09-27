@@ -5,7 +5,11 @@
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_kcpwf"]
 
 [node name="uzi" type="Area2D"]
+collision_layer = 0
+collision_mask = 0
 script = ExtResource("1_mau3w")
+weapon_ID = 2
+weapon_name = "uzi"
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 shape = SubResource("RectangleShape2D_kcpwf")
@@ -13,3 +17,4 @@ shape = SubResource("RectangleShape2D_kcpwf")
 [node name="Sprite2D" type="Sprite2D" parent="."]
 
 [node name="MuzzlePoint" type="Node2D" parent="."]
+position = Vector2(10, 0)
