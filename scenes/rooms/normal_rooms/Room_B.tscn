@@ -1,14 +1,13 @@
 [gd_scene load_steps=2 format=3 uid="uid://8wgjujead1wb"]
 
-[sub_resource type="TileSet" id="TileSet_30ddr"]
+[sub_resource type="GDScript" id="GDScript_khhew"]
 
 [node name="RoomD" type="Node2D"]
 y_sort_enabled = true
-
-[node name="TileMapLayer" type="TileMapLayer" parent="."]
-tile_set = SubResource("TileSet_30ddr")
+script = SubResource("GDScript_khhew")
 
 [node name="StaticBody2D" type="StaticBody2D" parent="."]
+z_index = -2
 position = Vector2(0, 512)
 collision_layer = 8
 collision_mask = 0

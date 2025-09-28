@@ -1,8 +1,11 @@
-[gd_scene load_steps=2 format=3 uid="uid://bdrtqq0gahy11"]
+[gd_scene load_steps=3 format=3 uid="uid://bdrtqq0gahy11"]
+
+[ext_resource type="Script" uid="uid://cumcts3r7ytnn" path="res://scripts/rooms/normal_room.gd" id="1_1cuia"]
 
 [sub_resource type="TileSet" id="TileSet_30ddr"]
 
 [node name="Room_L" type="Node2D"]
+script = ExtResource("1_1cuia")
 
 [node name="TileMapLayer" type="TileMapLayer" parent="."]
 tile_set = SubResource("TileSet_30ddr")

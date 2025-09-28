@@ -1,12 +1,20 @@
-[gd_scene load_steps=2 format=3 uid="uid://cabjkivxm7o8m"]
+[gd_scene load_steps=3 format=3 uid="uid://cabjkivxm7o8m"]
+
+[ext_resource type="Script" uid="uid://cumcts3r7ytnn" path="res://scripts/rooms/normal_room.gd" id="1_jueoa"]
 
 [sub_resource type="TileSet" id="TileSet_30ddr"]
 
 [node name="Room_T" type="Node2D"]
 y_sort_enabled = true
+script = ExtResource("1_jueoa")
 
 [node name="TileMapLayer" type="TileMapLayer" parent="."]
+texture_filter = 1
+scale = Vector2(4, 4)
+tile_map_data = PackedByteArray(0, 0, 0, 0, 2, 0, 1, 0, 0, 0, 0, 0, 0, 0)
 tile_set = SubResource("TileSet_30ddr")
+
+[node name="TileMapLayer" type="TileMapLayer" parent="TileMapLayer"]
 
 [node name="StaticBody2D" type="StaticBody2D" parent="."]
 position = Vector2(0, 544)

@@ -59,7 +59,12 @@ func return_to_pool():
 	
 func _on_body_entered(body):
 	# 处理碰撞逻辑
+	
+	if body is TileMapLayer:
+		self.visible = false
+		return
 	if body.collision_layer & 4 == 4 or body.collision_layer & 8 == 8 :
+		
 		if body.get_parent().has_method("take_damage"):
 		#print("成功命中")
 			self.visible = false

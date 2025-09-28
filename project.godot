@@ -28,6 +28,7 @@ WeaponDamageSystem="*res://scripts/managers/WeaponDamageSystem.gd"
 SkillDamageSystem="*res://scripts/managers/SkillDamageSystem.gd"
 BulletPool="*res://scripts/objectPool/BulletPool.gd"
 WeaponId="*res://scripts/ID_list/Weapon_ID.gd"
+NormalLevelGenerator="*res://scripts/systems/Normal_Level_Generator.gd"
 
 [display]
 
