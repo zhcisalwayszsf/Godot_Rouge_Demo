@@ -1,0 +1,41 @@
+[gd_scene load_steps=3 format=3 uid="uid://cephmacye83ew"]
+
+[ext_resource type="PackedScene" uid="uid://c1020k13uujwh" path="res://scenes/rooms/floor_layers/Spring/spring_room_floor.tscn" id="1_sfnay"]
+[ext_resource type="PackedScene" uid="uid://de5r2rgny5g7q" path="res://scenes/rooms/floor_layers/Spring/spring_room_rect_wall.tscn" id="2_2h73h"]
+
+[node name="Node2D" type="Node2D"]
+
+[node name="TileMapLayer6" parent="." instance=ExtResource("1_sfnay")]
+visible = false
+scale = Vector2(2, 2)
+
+[node name="TileMapLayer" parent="." instance=ExtResource("2_2h73h")]
+scale = Vector2(2, 2)
+
+[node name="TileMapLayer2" parent="." instance=ExtResource("2_2h73h")]
+position = Vector2(-1664, 0)
+scale = Vector2(2, 2)
+
+[node name="TileMapLayer3" parent="." instance=ExtResource("2_2h73h")]
+position = Vector2(0, 1024)
+scale = Vector2(2, 2)
+
+[node name="TileMapLayer4" parent="." instance=ExtResource("2_2h73h")]
+position = Vector2(1664, 0)
+scale = Vector2(2, 2)
+
+[node name="TileMapLayer5" parent="." instance=ExtResource("2_2h73h")]
+position = Vector2(1664, 1024)
+scale = Vector2(2, 2)
+
+[node name="TileMapLayer7" parent="." instance=ExtResource("2_2h73h")]
+position = Vector2(0, 2048)
+scale = Vector2(2, 2)
+
+[node name="TileMapLayer8" parent="." instance=ExtResource("2_2h73h")]
+position = Vector2(-3328, 0)
+scale = Vector2(2, 2)
+
+[node name="TileMapLayer9" parent="." instance=ExtResource("2_2h73h")]
+position = Vector2(1664, -1024)
+scale = Vector2(2, 2)

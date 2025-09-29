@@ -28,18 +28,18 @@ func _input(event):
 	
 	if event.is_action_pressed("space"):
 		remove_child(level_node)
-		level_node = NormalLevelGenerator.generate_with_config(config)
+		level_node = NormalLevelGenerator.generate_with_config(config).get("level_node")
 		add_child(level_node)
 	
 
 func level_generator():
-	level_node = NormalLevelGenerator.generate()
+	level_node = NormalLevelGenerator.generate().get("level_node")
 	level_node.get_node("room1").add_child(load("res://scenes/buildings/Blacksmith.tscn").instantiate())
 	add_child(level_node)
 	
 	config = NormalLevelGenerator.level_config.new().config_dic
 	config.GRID_SIZE= 6
-	config.TARGET_ROOMS=5
+	config.TARGET_ROOMS=6
 	config.CONNECTION_RATE= 0.25
 	config.ENABLE_PARTITIONS= true
 	config.COMPLEXITY_BIAS = 0.6

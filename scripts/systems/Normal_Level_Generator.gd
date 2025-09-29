@@ -1,5 +1,5 @@
 # Normal_Level_Generator.gd
-# 单例模式的随机关卡生成器 - 仅生成布局框架版本
+# 单例模式的随机关卡生成器 - 返回详细数据结构版本
 extends Node
 
 # ============== 核心参数 ==============
@@ -15,6 +15,39 @@ const ROOM_WIDTH = 1664
 const ROOM_HEIGHT = 1024
 
 enum Direction { LEFT = 0, RIGHT = 1, TOP = 2, BOTTOM = 3 }
+
+# ============== 自定义数据结构 ==============
+class LevelData:
+	var level_node: Node2D = null
+	var grid_info: Dictionary = {}
+	var all_rooms_info: Dictionary = {}
+	
+	func _init():
+		grid_info = {
+			"grid_size": 0,
+			"room_count": 0,
+			"connection_count": 0
+		}
+
+class RoomInfo:
+	var room_name: String = ""
+	var global_position: Vector2 = Vector2.ZERO
+	var grid_position: Vector2i = Vector2i.ZERO
+	var connections: Array = []
+	var connected_neighbors: Array = [false, false, false, false]
+	var neighbors: Array = [null, null, null, null]
+	var diagonal_neighbors: Array = [false, false, false, false]  # 新增：[左上, 右上, 左下, 右下]
+	
+	func to_dict() -> Dictionary:
+		return {
+			"room_name": room_name,
+			"global_position": global_position,
+			"grid_position": grid_position,
+			"connections": connections,
+			"connected_neighbors": connected_neighbors,
+			"neighbors": neighbors,
+			"diagonal_neighbors": diagonal_neighbors  # 新增
+		}
 
 class level_config:
 	var config_dic:Dictionary = {
@@ -50,6 +83,7 @@ class RoomCell:
 	var is_room: bool = false
 	var connections: Array = []
 	var scene_instance: Node2D = null
+	var room_name: String = ""  # 新增：存储房间名称
 	
 	func has_connection(dir: Direction) -> bool:
 		return dir in connections
@@ -80,7 +114,9 @@ var potential_connections: Array = []
 var active_connections: Array = []
 var rng: RandomNumberGenerator
 var initial_room_pos: Vector2i
+var room_position_map: Dictionary = {}  # 新增：存储网格位置到房间名称的映射
 
+var final_room_info:Dictionary
 # ============== 公共接口 ==============
 
 func generate(
@@ -91,8 +127,8 @@ func generate(
 	complexity_bias: float = 0.5,
 	random_seed: int = -1,
 	debug_mode: bool = false
-) -> Node2D:
-	"""主方法 - 使用参数生成关卡"""
+) -> Dictionary:
+	"""主方法 - 使用参数生成关卡，返回详细数据"""
 	
 	GRID_SIZE = grid_size
 	TARGET_ROOMS = target_rooms
@@ -102,31 +138,35 @@ func generate(
 	RANDOM_SEED = random_seed
 	DEBUG_MODE = debug_mode
 	
-	return _generate_level_internal()
+	var level_data = _generate_level_internal()
+	return _convert_level_data_to_dict(level_data)
 
-func generate_with_config(config: Dictionary) -> Node2D:
-	"""副方法 - 使用完整配置生成关卡"""
+func generate_with_config(config: Dictionary) -> Dictionary:
+	"""副方法 - 使用完整配置生成关卡，返回详细数据"""
 	
-	GRID_SIZE = config.get("grid_size", 5)
-	TARGET_ROOMS = config.get("target_rooms", 8)
-	CONNECTION_RATE = config.get("connection_rate", 0.5)
-	ENABLE_PARTITIONS = config.get("enable_partitions", true)
-	COMPLEXITY_BIAS = config.get("complexity_bias", 0.5)
-	RANDOM_SEED = config.get("random_seed", -1)
-	DEBUG_MODE = config.get("debug_mode", false)
+	GRID_SIZE = config.GRID_SIZE
+	TARGET_ROOMS = config.TARGET_ROOMS
+	CONNECTION_RATE = config.CONNECTION_RATE
+	ENABLE_PARTITIONS = config.ENABLE_PARTITIONS 
+	COMPLEXITY_BIAS = config.COMPLEXITY_BIAS
+	RANDOM_SEED = config.RANDOM_SEED
+	DEBUG_MODE = config.DEBUG_MODE 
 	
 	if config.has("room_templates"):
 		room_templates = config.room_templates
 	
-	return _generate_level_internal()
+	var level_data = _generate_level_internal()
+	return _convert_level_data_to_dict(level_data)
 
 # ============== 内部生成逻辑 ==============
 
-func _generate_level_internal() -> Node2D:
-	"""内部生成方法 - 返回Level节点 - 框架版"""
+func _generate_level_internal() -> LevelData:
+	"""内部生成方法 - 返回LevelData对象"""
 	
+	var level_data = LevelData.new()
 	var level_node = Node2D.new()
 	level_node.name = "Level"
+	level_data.level_node = level_node
 	
 	_clear_state()
 	_initialize_generator()
@@ -194,14 +234,84 @@ func _generate_level_internal() -> Node2D:
 	
 	_instantiate_rooms_to_level(level_node)
 	
+	# 填充LevelData
+	level_data.grid_info = {
+		"grid_size": GRID_SIZE,
+		"room_count": rooms.size(),
+		"connection_count": active_connections.size()
+	}
+	
+	# 收集所有房间信息
+	level_data.all_rooms_info = _collect_rooms_info()
+	
 	_log_debug("=== 关卡生成完成 ===")
-	return level_node
+	return level_data
+
+func _collect_rooms_info() -> Dictionary:
+	"""收集所有房间的详细信息"""
+	var all_rooms_info = {}
+	var center_offset = (GRID_SIZE + 1) / 2.0
+	var initial_world_pos = Vector2(
+		(initial_room_pos.x - center_offset) * ROOM_WIDTH,
+		(initial_room_pos.y - center_offset) * ROOM_HEIGHT
+	)
+	
+	for room_pos in rooms:
+		var cell = grid.get(room_pos) as RoomCell
+		if not cell:
+			continue
+			
+		var room_info = RoomInfo.new()
+		room_info.room_name = cell.room_name
+		room_info.grid_position = room_pos
+		
+		# 计算全局坐标（房间中心点）
+		var world_pos = Vector2(
+			(room_pos.x - center_offset) * ROOM_WIDTH,
+			(room_pos.y - center_offset) * ROOM_HEIGHT
+		)
+		var relative_pos = world_pos - initial_world_pos
+		room_info.global_position = relative_pos + Vector2(ROOM_WIDTH/2, ROOM_HEIGHT/2)
+		
+		# 设置连接方向
+		room_info.connections = cell.connections.duplicate()
+		
+		# 检查每个方向的邻居
+		for dir in [Direction.LEFT, Direction.RIGHT, Direction.TOP, Direction.BOTTOM]:
+			var neighbor_pos = room_pos + get_direction_vector(dir)
+			
+			# 检查是否有邻居房间
+			if is_room_at(neighbor_pos):
+				var neighbor_cell = grid.get(neighbor_pos) as RoomCell
+				if neighbor_cell:
+					room_info.neighbors[dir] = neighbor_cell.room_name
+					
+					# 检查是否连通
+					if cell.has_connection(dir):
+						room_info.connected_neighbors[dir] = true
+			else:
+				room_info.neighbors[dir] = null
+				room_info.connected_neighbors[dir] = false
+		
+		# 添加到结果字典
+		var info_key = cell.room_name + "_info"
+		all_rooms_info[info_key] = room_info.to_dict()
+		final_room_info = all_rooms_info
+	return all_rooms_info
+
+func _convert_level_data_to_dict(level_data: LevelData) -> Dictionary:
+	"""将LevelData转换为字典格式"""
+	return {
+		"level_node": level_data.level_node,
+		"grid_info": level_data.grid_info,
+		"all_rooms_info": level_data.all_rooms_info
+	}
 
 func _instantiate_rooms_to_level(level_node: Node2D):
 	"""将房间实例化到Level节点 - 仅加载预制场景"""
 	
 	if rooms.is_empty():
-		push_error("无法实例化：没有房间")
+		push_error("无法实例化:没有房间")
 		return
 	
 	var center_offset = (GRID_SIZE + 1) / 2.0
@@ -211,6 +321,7 @@ func _instantiate_rooms_to_level(level_node: Node2D):
 	)
 	
 	var room_index = 1
+	room_position_map.clear()
 	
 	# 先实例化初始房间
 	var initial_cell = grid.get(initial_room_pos) as RoomCell
@@ -220,32 +331,124 @@ func _instantiate_rooms_to_level(level_node: Node2D):
 		
 		if initial_instance:
 			initial_instance.name = "room1"
+			initial_cell.room_name = "room1"
 			initial_instance.position = Vector2.ZERO
 			level_node.add_child(initial_instance)
-			room_index += 1
+			
+			# 等待节点准备好
+			await get_tree().process_frame
+			
+			# 调用初始化方法
+			if initial_instance.has_method("instantiate_tile"):
+				var initial_room_info = _create_room_info_for_position(initial_room_pos, "room1")
+				initial_instance.instantiate_tile(initial_room_info)
+			else:
+				push_warning("初始房间没有 instantiate_tile 方法")
 	
 	# 实例化其他房间
 	for room_pos in rooms:
 		if room_pos == initial_room_pos:
 			continue
-		
+	
 		var cell = grid.get(room_pos) as RoomCell
 		if not cell:
 			push_warning("房间 %s 没有有效的cell" % str(room_pos))
 			continue
-			
+		
 		var room_type = get_room_type_from_connections(cell.connections)
 		var room_instance = _create_room_instance(room_pos, room_type)
-		
+	
 		if room_instance:
-			room_instance.name = "room%d" % room_index
+			var room_name = "room%d" % room_index
+			room_instance.name = room_name
+			cell.room_name = room_name
 			var world_pos = Vector2(
 				(room_pos.x - center_offset) * ROOM_WIDTH,
 				(room_pos.y - center_offset) * ROOM_HEIGHT
 			)
 			room_instance.position = world_pos - initial_world_pos
 			level_node.add_child(room_instance)
+			
+			# 等待节点准备好
+			await get_tree().process_frame
+			
+			# 调用初始化方法
+			if room_instance.has_method("instantiate_tile"):
+				var current_room_info = _create_room_info_for_position(room_pos, room_name)
+				room_instance.instantiate_tile(current_room_info)
+			else:
+				push_warning("房间 %s 没有 instantiate_tile 方法" % room_name)
+		
+			room_position_map[room_pos] = room_name
 			room_index += 1
+
+func _create_room_info_for_position(room_pos: Vector2i, room_name: String) -> RoomInfo:
+	"""为指定位置创建RoomInfo对象 - 用于实例化时调用"""
+	var cell = grid.get(room_pos) as RoomCell
+	if not cell:
+		push_error("无法为位置 %s 创建RoomInfo：没有有效的cell" % str(room_pos))
+		return null
+	
+	var room_info = RoomInfo.new()
+	room_info.room_name = room_name
+	room_info.grid_position = room_pos
+	
+	# 计算全局坐标（房间中心点）
+	var center_offset = (GRID_SIZE + 1) / 2.0
+	var initial_world_pos = Vector2(
+		(initial_room_pos.x - center_offset) * ROOM_WIDTH,
+		(initial_room_pos.y - center_offset) * ROOM_HEIGHT
+	)
+	var world_pos = Vector2(
+		(room_pos.x - center_offset) * ROOM_WIDTH,
+		(room_pos.y - center_offset) * ROOM_HEIGHT
+	)
+	var relative_pos = world_pos - initial_world_pos
+	room_info.global_position = relative_pos + Vector2(ROOM_WIDTH/2, ROOM_HEIGHT/2)
+	
+	# 设置连接方向
+	room_info.connections = cell.connections.duplicate()
+	
+	# 确保数组正确初始化为4个元素 [LEFT, RIGHT, TOP, BOTTOM]
+	room_info.connected_neighbors = [false, false, false, false]
+	room_info.neighbors = [null, null, null, null]
+	
+	# 检查每个方向的邻居
+	for dir in [Direction.LEFT, Direction.RIGHT, Direction.TOP, Direction.BOTTOM]:
+		var neighbor_pos = room_pos + get_direction_vector(dir)
+		
+		# 检查是否有邻居房间
+		if is_room_at(neighbor_pos):
+			var neighbor_cell = grid.get(neighbor_pos) as RoomCell
+			if neighbor_cell and not neighbor_cell.room_name.is_empty():
+				room_info.neighbors[dir] = neighbor_cell.room_name
+			else:
+				# 如果邻居房间名称还未分配，使用位置信息作为临时标识
+				room_info.neighbors[dir] = "room_at_" + str(neighbor_pos)
+			
+			# 检查是否连通
+			if cell.has_connection(dir):
+				room_info.connected_neighbors[dir] = true
+			else:
+				room_info.connected_neighbors[dir] = false
+		else:
+			room_info.neighbors[dir] = null
+			room_info.connected_neighbors[dir] = false
+	
+	# 检查对角线位置 [左上, 左下 , 右下,右上]
+	var diagonal_offsets = [
+		Vector2i(-1, -1),  # 左上
+		Vector2i(-1, 1),   # 左下
+		Vector2i(1, 1),     # 右下
+		Vector2i(1, -1)   # 右上
+	]
+	
+	room_info.diagonal_neighbors = [false, false, false, false]
+	for i in range(4):
+		var diagonal_pos = room_pos + diagonal_offsets[i]
+		room_info.diagonal_neighbors[i] = is_room_at(diagonal_pos)
+	
+	return room_info
 
 func _create_room_instance(grid_pos: Vector2i, room_type: String) -> Node2D:
 	"""创建房间实例 - 仅加载预制场景，不添加任何生成逻辑"""
@@ -263,9 +466,6 @@ func _create_room_instance(grid_pos: Vector2i, room_type: String) -> Node2D:
 	if cell:
 		cell.scene_instance = room_instance
 	
-	# 不调用任何内容生成相关的方法
-	# 房间场景应该已经包含所有静态内容
-	
 	return room_instance
 
 func _clear_state():
@@ -275,6 +475,7 @@ func _clear_state():
 	potential_connections.clear()
 	active_connections.clear()
 	initial_room_pos = Vector2i.ZERO
+	room_position_map.clear()
 
 func _initialize_generator():
 	"""初始化生成器"""
@@ -1009,23 +1210,35 @@ func _log_debug(message: String):
 	"""条件调试输出"""
 	if DEBUG_MODE:
 		print("[LevelGen] " + message)
-		
-		
+
+
 """
+# ============== 使用示例 ==============
+
 # 示例1：使用默认参数快速生成
 func generate_default_level():
-	var level_node = NormalLevelGenerator.generate()
-	add_child(level_node)
-	# level_node 包含：
-	# |- Level (Node2D)
-	#    |- room1 (初始房间，位于0,0)
-	#    |- room2
-	#    |- room3
-	#    |- ...
+	var result = NormalLevelGenerator.generate()
+	
+	# 获取生成的节点
+	add_child(result.level_node)
+	
+	# 访问网格信息
+	print("网格大小: ", result.grid_info.grid_size)
+	print("房间数量: ", result.grid_info.room_count)
+	
+	# 遍历所有房间信息
+	for key in result.all_rooms_info:
+		var room_info = result.all_rooms_info[key]
+		print("房间: ", room_info.room_name)
+		print("  全局位置: ", room_info.global_position)
+		print("  网格位置: ", room_info.grid_position)
+		print("  开口方向: ", room_info.connections)
+		print("  连通邻居: ", room_info.connected_neighbors)
+		print("  所有邻居: ", room_info.neighbors)
 
 # 示例2：自定义参数生成
 func generate_custom_level():
-	var level_node = NormalLevelGenerator.generate(
+	var result = NormalLevelGenerator.generate(
 		7,      # grid_size
 		12,     # target_rooms
 		0.7,    # connection_rate
@@ -1033,7 +1246,13 @@ func generate_custom_level():
 		0.8,    # complexity_bias
 		12345   # random_seed
 	)
-	add_child(level_node)
+	
+	add_child(result.level_node)
+	
+	# 检查特定房间
+	if result.all_rooms_info.has("room1_info"):
+		var room1 = result.all_rooms_info["room1_info"]
+		print("初始房间位置: ", room1.global_position)
 
 # 示例3：使用完整配置字典
 func generate_with_config():
@@ -1043,16 +1262,38 @@ func generate_with_config():
 		"connection_rate": 0.6,
 		"enable_partitions": false,
 		"complexity_bias": 0.5,
-		"random_seed": -1,  # -1表示随机
-		# 可选：自定义房间模板路径
+		"random_seed": -1,
 		"room_templates": {
 			"L": "res://custom_rooms/Room_L.tscn",
-			"R": "res://custom_rooms/Room_R.tscn",
-			# ...其他房间模板
+			"R": "res://custom_rooms/Room_R.tscn"
 		}
 	}
 	
-	var level_node = NormalLevelGenerator.generate_with_full_config(config)
-	add_child(level_node)
+	var result = NormalLevelGenerator.generate_with_config(config)
+	
+	# 根据房间信息做进一步处理
+	for key in result.all_rooms_info:
+		var room_info = result.all_rooms_info[key]
+		# 例如：根据连通性生成敌人
+		var enemy_count = room_info.connected_neighbors.count(true)
+		spawn_enemies_in_room(room_info.room_name, enemy_count)
 
+# 示例4：访问邻居关系
+func check_room_connections(result: Dictionary):
+	var room5_info = result.all_rooms_info.get("room5_info")
+	if room5_info:
+		# 检查左边是否有连通的房间
+		if room5_info.connected_neighbors[0]:  # 0 = LEFT
+			var left_neighbor = room5_info.neighbors[0]
+			print("room5 左边连通: ", left_neighbor)
+		
+		# 检查所有方向
+		for i in range(4):
+			var dir_names = ["左", "右", "上", "下"]
+			if room5_info.neighbors[i]:
+				print("方向 %s: %s (连通: %s)" % [
+					dir_names[i],
+					room5_info.neighbors[i],
+					room5_info.connected_neighbors[i]
+				])
 """

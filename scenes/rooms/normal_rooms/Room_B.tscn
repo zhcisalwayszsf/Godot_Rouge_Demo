@@ -1,10 +1,12 @@
 [gd_scene load_steps=2 format=3 uid="uid://8wgjujead1wb"]
 
-[sub_resource type="GDScript" id="GDScript_khhew"]
+[ext_resource type="Script" uid="uid://cumcts3r7ytnn" path="res://scripts/rooms/normal_room.gd" id="1_sl23w"]
 
-[node name="RoomD" type="Node2D"]
+[node name="RoomB" type="Node2D"]
+z_index = -1
+z_as_relative = false
 y_sort_enabled = true
-script = SubResource("GDScript_khhew")
+script = ExtResource("1_sl23w")
 
 [node name="StaticBody2D" type="StaticBody2D" parent="."]
 z_index = -2
@@ -15,5 +17,5 @@ collision_mask = 0
 [node name="CollisionPolygon2D" type="CollisionPolygon2D" parent="StaticBody2D"]
 polygon = PackedVector2Array(-64, 32, -864, 32, -864, -1056, 864, -1056, 864, 32, 64, 32, 64, -32, 800, -32, 800, -992, -800, -992, -800, -32, -64, -32)
 
-[node name="Base_Point" type="Node2D" parent="."]
+[node name="Base_Point_B" type="Node2D" parent="."]
 position = Vector2(0, 512)
