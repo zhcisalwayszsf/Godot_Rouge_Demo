@@ -60,23 +60,8 @@ class level_config:
 		"DEBUG_MODE":false as bool 
 	}
 	
-var room_templates = {
-	"L": "res://scenes/rooms/normal_rooms/Room_L.tscn",
-	"R": "res://scenes/rooms/normal_rooms/Room_R.tscn", 
-	"T": "res://scenes/rooms/normal_rooms/Room_T.tscn",
-	"B": "res://scenes/rooms/normal_rooms/Room_B.tscn",
-	"LR": "res://scenes/rooms/normal_rooms/Room_LR.tscn",
-	"LT": "res://scenes/rooms/normal_rooms/Room_LT.tscn",
-	"LB": "res://scenes/rooms/normal_rooms/Room_LB.tscn",
-	"RT": "res://scenes/rooms/normal_rooms/Room_RT.tscn",
-	"RB": "res://scenes/rooms/normal_rooms/Room_RB.tscn",
-	"TB": "res://scenes/rooms/normal_rooms/Room_TB.tscn",
-	"LRB": "res://scenes/rooms/normal_rooms/Room_LRB.tscn",
-	"LRT": "res://scenes/rooms/normal_rooms/Room_LRT.tscn",
-	"RTB": "res://scenes/rooms/normal_rooms/Room_RTB.tscn",
-	"LTB": "res://scenes/rooms/normal_rooms/Room_LTB.tscn",
-	"LRTB": "res://scenes/rooms/normal_rooms/Room_LRTB.tscn"
-}
+var room_template = "res://scenes/rooms/normal_rooms/room_frame.tscn"
+
 
 # 数据结构
 class RoomCell:
@@ -152,9 +137,7 @@ func generate_with_config(config: Dictionary) -> Dictionary:
 	RANDOM_SEED = config.RANDOM_SEED
 	DEBUG_MODE = config.DEBUG_MODE 
 	
-	if config.has("room_templates"):
-		room_templates = config.room_templates
-	
+
 	var level_data = _generate_level_internal()
 	return _convert_level_data_to_dict(level_data)
 
@@ -247,9 +230,15 @@ func _generate_level_internal() -> LevelData:
 	_log_debug("=== 关卡生成完成 ===")
 	return level_data
 
+# 优化_collect_rooms_info，添加更多null检查
 func _collect_rooms_info() -> Dictionary:
 	"""收集所有房间的详细信息"""
 	var all_rooms_info = {}
+	
+	if rooms.is_empty():
+		push_warning("没有房间需要收集信息")
+		return all_rooms_info
+	
 	var center_offset = (GRID_SIZE + 1) / 2.0
 	var initial_world_pos = Vector2(
 		(initial_room_pos.x - center_offset) * ROOM_WIDTH,
@@ -259,10 +248,11 @@ func _collect_rooms_info() -> Dictionary:
 	for room_pos in rooms:
 		var cell = grid.get(room_pos) as RoomCell
 		if not cell:
+			push_warning("房间位置 %s 没有有效的cell" % str(room_pos))
 			continue
 			
 		var room_info = RoomInfo.new()
-		room_info.room_name = cell.room_name
+		room_info.room_name = cell.room_name if not cell.room_name.is_empty() else "unknown"
 		room_info.grid_position = room_pos
 		
 		# 计算全局坐标（房间中心点）
@@ -277,26 +267,34 @@ func _collect_rooms_info() -> Dictionary:
 		room_info.connections = cell.connections.duplicate()
 		
 		# 检查每个方向的邻居
+		room_info.connected_neighbors = [false, false, false, false]
+		room_info.neighbors = [null, null, null, null]
+		
 		for dir in [Direction.LEFT, Direction.RIGHT, Direction.TOP, Direction.BOTTOM]:
 			var neighbor_pos = room_pos + get_direction_vector(dir)
 			
-			# 检查是否有邻居房间
 			if is_room_at(neighbor_pos):
 				var neighbor_cell = grid.get(neighbor_pos) as RoomCell
-				if neighbor_cell:
+				if neighbor_cell and not neighbor_cell.room_name.is_empty():
 					room_info.neighbors[dir] = neighbor_cell.room_name
-					
-					# 检查是否连通
-					if cell.has_connection(dir):
-						room_info.connected_neighbors[dir] = true
-			else:
-				room_info.neighbors[dir] = null
-				room_info.connected_neighbors[dir] = false
+					room_info.connected_neighbors[dir] = cell.has_connection(dir)
+		
+		# 检查对角线位置
+		var diagonal_offsets = [
+			Vector2i(-1, -1), Vector2i(-1, 1),
+			Vector2i(1, 1), Vector2i(1, -1)
+		]
+		
+		room_info.diagonal_neighbors = [false, false, false, false]
+		for i in range(4):
+			var diagonal_pos = room_pos + diagonal_offsets[i]
+			room_info.diagonal_neighbors[i] = is_room_at(diagonal_pos)
 		
 		# 添加到结果字典
-		var info_key = cell.room_name + "_info"
+		var info_key = room_info.room_name + "_info"
 		all_rooms_info[info_key] = room_info.to_dict()
-		final_room_info = all_rooms_info
+	
+	final_room_info = all_rooms_info
 	return all_rooms_info
 
 func _convert_level_data_to_dict(level_data: LevelData) -> Dictionary:
@@ -307,8 +305,9 @@ func _convert_level_data_to_dict(level_data: LevelData) -> Dictionary:
 		"all_rooms_info": level_data.all_rooms_info
 	}
 
+# 优化_instantiate_rooms_to_level，避免await导致的问题
 func _instantiate_rooms_to_level(level_node: Node2D):
-	"""将房间实例化到Level节点 - 仅加载预制场景"""
+	"""将房间实例化到Level节点"""
 	
 	if rooms.is_empty():
 		push_error("无法实例化:没有房间")
@@ -320,30 +319,26 @@ func _instantiate_rooms_to_level(level_node: Node2D):
 		(initial_room_pos.y - center_offset) * ROOM_HEIGHT
 	)
 	
-	var room_index = 1
+	var room_index = 2  # 修改：从2开始，因为room1是初始房间
 	room_position_map.clear()
 	
 	# 先实例化初始房间
 	var initial_cell = grid.get(initial_room_pos) as RoomCell
 	if initial_cell:
-		var initial_room_type = get_room_type_from_connections(initial_cell.connections)
-		var initial_instance = _create_room_instance(initial_room_pos, initial_room_type)
+		var initial_instance = _create_room_instance(initial_room_pos, "")
 		
 		if initial_instance:
 			initial_instance.name = "room1"
 			initial_cell.room_name = "room1"
 			initial_instance.position = Vector2.ZERO
 			level_node.add_child(initial_instance)
+			room_position_map[initial_room_pos] = "room1"  # 添加：记录初始房间
 			
-			# 等待节点准备好
-			await get_tree().process_frame
-			
-			# 调用初始化方法
+			# 调用instantiate_tile
 			if initial_instance.has_method("instantiate_tile"):
 				var initial_room_info = _create_room_info_for_position(initial_room_pos, "room1")
-				initial_instance.instantiate_tile(initial_room_info)
-			else:
-				push_warning("初始房间没有 instantiate_tile 方法")
+				if initial_room_info:
+					initial_instance.call_deferred("instantiate_tile", initial_room_info)
 	
 	# 实例化其他房间
 	for room_pos in rooms:
@@ -355,8 +350,7 @@ func _instantiate_rooms_to_level(level_node: Node2D):
 			push_warning("房间 %s 没有有效的cell" % str(room_pos))
 			continue
 		
-		var room_type = get_room_type_from_connections(cell.connections)
-		var room_instance = _create_room_instance(room_pos, room_type)
+		var room_instance = _create_room_instance(room_pos, "")
 	
 		if room_instance:
 			var room_name = "room%d" % room_index
@@ -369,25 +363,30 @@ func _instantiate_rooms_to_level(level_node: Node2D):
 			room_instance.position = world_pos - initial_world_pos
 			level_node.add_child(room_instance)
 			
-			# 等待节点准备好
-			await get_tree().process_frame
-			
-			# 调用初始化方法
+			# 调用instantiate_tile
 			if room_instance.has_method("instantiate_tile"):
 				var current_room_info = _create_room_info_for_position(room_pos, room_name)
-				room_instance.instantiate_tile(current_room_info)
-			else:
-				push_warning("房间 %s 没有 instantiate_tile 方法" % room_name)
+				if current_room_info:
+					room_instance.call_deferred("instantiate_tile", current_room_info)
 		
 			room_position_map[room_pos] = room_name
 			room_index += 1
+	
+	print("=== 房间实例化完成 ===")
+	print("总房间数: ", room_position_map.size())
+	print("房间列表: ", room_position_map.values())
 
-func _create_room_info_for_position(room_pos: Vector2i, room_name: String) -> RoomInfo:
+# 优化_create_room_info_for_position，确保不返回null
+func _create_room_info_for_position(room_pos: Vector2i, room_name: String) -> NormalLevelGenerator.RoomInfo:
 	"""为指定位置创建RoomInfo对象 - 用于实例化时调用"""
 	var cell = grid.get(room_pos) as RoomCell
 	if not cell:
 		push_error("无法为位置 %s 创建RoomInfo：没有有效的cell" % str(room_pos))
-		return null
+		# 返回一个空的RoomInfo而不是null
+		var empty_info = RoomInfo.new()
+		empty_info.room_name = room_name
+		empty_info.grid_position = room_pos
+		return empty_info
 	
 	var room_info = RoomInfo.new()
 	room_info.room_name = room_name
@@ -420,27 +419,29 @@ func _create_room_info_for_position(room_pos: Vector2i, room_name: String) -> Ro
 		# 检查是否有邻居房间
 		if is_room_at(neighbor_pos):
 			var neighbor_cell = grid.get(neighbor_pos) as RoomCell
-			if neighbor_cell and not neighbor_cell.room_name.is_empty():
-				room_info.neighbors[dir] = neighbor_cell.room_name
+			if neighbor_cell:
+				# 使用房间名称或位置信息
+				if not neighbor_cell.room_name.is_empty():
+					room_info.neighbors[dir] = neighbor_cell.room_name
+				else:
+					# 如果邻居房间名称还未分配，使用位置信息作为临时标识
+					room_info.neighbors[dir] = "room_at_" + str(neighbor_pos)
+				
+				# 检查是否连通
+				room_info.connected_neighbors[dir] = cell.has_connection(dir)
 			else:
-				# 如果邻居房间名称还未分配，使用位置信息作为临时标识
-				room_info.neighbors[dir] = "room_at_" + str(neighbor_pos)
-			
-			# 检查是否连通
-			if cell.has_connection(dir):
-				room_info.connected_neighbors[dir] = true
-			else:
+				room_info.neighbors[dir] = null
 				room_info.connected_neighbors[dir] = false
 		else:
 			room_info.neighbors[dir] = null
 			room_info.connected_neighbors[dir] = false
 	
-	# 检查对角线位置 [左上, 左下 , 右下,右上]
+	# 检查对角线位置 [左上, 左下, 右下, 右上]
 	var diagonal_offsets = [
 		Vector2i(-1, -1),  # 左上
 		Vector2i(-1, 1),   # 左下
-		Vector2i(1, 1),     # 右下
-		Vector2i(1, -1)   # 右上
+		Vector2i(1, 1),    # 右下
+		Vector2i(1, -1)    # 右上
 	]
 	
 	room_info.diagonal_neighbors = [false, false, false, false]
@@ -450,15 +451,14 @@ func _create_room_info_for_position(room_pos: Vector2i, room_name: String) -> Ro
 	
 	return room_info
 
+
+
 func _create_room_instance(grid_pos: Vector2i, room_type: String) -> Node2D:
-	"""创建房间实例 - 仅加载预制场景，不添加任何生成逻辑"""
-	if not room_templates.has(room_type):
-		push_warning("未找到房间模板: %s，使用默认模板 R" % room_type)
-		room_type = "R"
+	"""创建房间实例 - 统一使用 room_frame 模板"""
 	
-	var room_scene = load(room_templates[room_type])
+	var room_scene = load(room_template)
 	if not room_scene:
-		push_error("加载房间场景失败: %s" % room_templates[room_type])
+		push_error("加载房间场景失败: %s" % room_template)
 		return null
 	
 	var room_instance = room_scene.instantiate()
@@ -467,6 +467,7 @@ func _create_room_instance(grid_pos: Vector2i, room_type: String) -> Node2D:
 		cell.scene_instance = room_instance
 	
 	return room_instance
+
 
 func _clear_state():
 	"""清理状态"""
@@ -1151,6 +1152,7 @@ func find_valid_start_position() -> Vector2i:
 	
 	return Vector2i(-1, -1)
 
+"""
 func get_room_type_from_connections(connections: Array) -> String:
 	var type_str = ""
 	
@@ -1160,6 +1162,7 @@ func get_room_type_from_connections(connections: Array) -> String:
 	if Direction.BOTTOM in connections: type_str += "B"
 	
 	return type_str if not type_str.is_empty() else "R"
+"""
 
 func place_room(pos: Vector2i) -> bool:
 	if not is_valid_position(pos):

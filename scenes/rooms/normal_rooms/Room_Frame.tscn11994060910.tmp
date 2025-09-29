@@ -1,0 +1,48 @@
+[gd_scene load_steps=3 format=3 uid="uid://bfnr7jmr214hb"]
+
+[ext_resource type="Script" uid="uid://chbe25dr75ryp" path="res://scripts/rooms/room_frame.gd" id="1_xgm44"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_xgm44"]
+size = Vector2(1600, 960)
+
+[node name="Room_Frame" type="Node2D"]
+z_index = 1
+z_as_relative = false
+y_sort_enabled = true
+script = ExtResource("1_xgm44")
+
+[node name="Wall" type="StaticBody2D" parent="."]
+collision_layer = 8
+collision_mask = 0
+
+[node name="CollisionPolygon2D" type="CollisionPolygon2D" parent="Wall"]
+polygon = PackedVector2Array(-864, -64, -864, -544, -64, -544, -64, -480, -800, -480, -800, -64)
+
+[node name="CollisionPolygon2D2" type="CollisionPolygon2D" parent="Wall"]
+polygon = PackedVector2Array(864, -64, 864, -544, 64, -544, 64, -480, 800, -480, 800, -64)
+
+[node name="CollisionPolygon2D4" type="CollisionPolygon2D" parent="Wall"]
+polygon = PackedVector2Array(64, 544, 864, 544, 864, 64, 800, 64, 800, 480, 64, 480)
+
+[node name="CollisionPolygon2D3" type="CollisionPolygon2D" parent="Wall"]
+polygon = PackedVector2Array(-64, 544, -864, 544, -864, 64, -800, 64, -800, 480, -64, 480)
+
+[node name="Base_Point_L" type="Node2D" parent="."]
+position = Vector2(-832, 0)
+
+[node name="Base_Point_R" type="Node2D" parent="."]
+position = Vector2(832, 0)
+
+[node name="Base_Point_T" type="Node2D" parent="."]
+position = Vector2(0, -512)
+
+[node name="Base_Point_B" type="Node2D" parent="."]
+position = Vector2(0, 512)
+
+[node name="Area2D" type="Area2D" parent="."]
+collision_layer = 512
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Area2D"]
+shape = SubResource("RectangleShape2D_xgm44")
+
+[connection signal="body_entered" from="Area2D" to="." method="_on_player_entered"]

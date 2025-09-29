@@ -43,6 +43,8 @@ var sfx_volume: float = 1.0
 var music_volume: float = 1.0
 var auto_pickup_enabled: bool = true
 
+#地图更新
+var current_room: String = "room1"
 # 信号
 signal state_changed(new_state: GameState, old_state: GameState)
 signal level_completed(level: int)
@@ -50,6 +52,7 @@ signal game_over()
 signal enemy_killed(enemy_data: EnemyData)
 signal item_collected(item_name: String)
 signal difficulty_changed(new_difficulty: Difficulty)
+signal player_entered_room(room_name: String)
 
 func _ready():
 	print("GameManager 初始化完成")
@@ -277,6 +280,13 @@ func register_item_collected(item_name: String):
 	total_items_collected += 1
 	item_collected.emit(item_name)
 	print("收集物品: ", item_name, " (总收集: ", total_items_collected, ")")
+
+# === 地图管理 ===
+func on_player_entered_room(room_name: String):
+	"""处理玩家进入房间"""
+	current_room = room_name
+	player_entered_room.emit(room_name)
+
 
 # === 设置管理 ===
 

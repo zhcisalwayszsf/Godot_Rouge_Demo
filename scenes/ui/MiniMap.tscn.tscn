@@ -1,0 +1,30 @@
+[gd_scene load_steps=6 format=3 uid="uid://cudq8phrlu4ot"]
+
+[ext_resource type="Script" uid="uid://nnednjrns83h" path="res://scripts/systems/MiniMap.gd" id="1_qpnch"]
+[ext_resource type="Texture2D" uid="uid://bavsepysjlx2a" path="res://assets/grounds/Sprout Lands - Sprites - Basic pack/Tilesets/Water.png" id="2_6rxxu"]
+[ext_resource type="Texture2D" uid="uid://bkeqvfdqfgsh0" path="res://assets/(24).png" id="2_j4vwl"]
+
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_tvnmo"]
+texture = ExtResource("2_6rxxu")
+2:0/0 = 0
+0:0/0 = 0
+1:0/0 = 0
+3:0/0 = 0
+
+[sub_resource type="TileSet" id="TileSet_d5crt"]
+sources/0 = SubResource("TileSetAtlasSource_tvnmo")
+
+[node name="MiniMap" type="CanvasLayer"]
+offset = Vector2(75, 75)
+scale = Vector2(0.5, 0.5)
+transform = Transform2D(0.5, 0, 0, 0.5, 75, 75)
+script = ExtResource("1_qpnch")
+
+[node name="MiniMapTiles" type="TileMapLayer" parent="."]
+z_index = 7
+z_as_relative = false
+tile_set = SubResource("TileSet_d5crt")
+
+[node name="PlayerMarker" type="Sprite2D" parent="."]
+scale = Vector2(0.2, 0.2)
+texture = ExtResource("2_j4vwl")

@@ -134,6 +134,7 @@ space={
 2d_physics/layer_7="special_enemy"
 2d_physics/layer_8="enemy_ammo"
 2d_physics/layer_9="air_wall"
+2d_physics/layer_10="房间区域"
 
 [physics]
 
