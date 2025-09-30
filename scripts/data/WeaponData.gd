@@ -37,3 +37,4 @@ class_name WeaponData
 @export var needs_aiming: bool = false
 @export_enum("直线", "抛物线", "追踪","穿透") var projectile_type: int = 0
 @export var special_effects: Array[String] = []
+@export var special_func:Callable = func():pass

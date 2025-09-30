@@ -20,8 +20,8 @@ var room_name
 signal player_entered(room_name: String)
 
 func _init() -> void:
-	tiles_floor = preload("res://scenes/rooms/floor_layers/Spring/spring_room_floor.tscn").instantiate()
-	tiles_wall = preload("res://scenes/rooms/floor_layers/Spring/spring_room_rect_wall.tscn").instantiate()
+	tiles_floor = preload("res://scenes/rooms/normal_rooms/floor_layers//Spring/spring_room_floor.tscn").instantiate()
+	tiles_wall = preload("res://scenes/rooms/normal_rooms/floor_layers//Spring/spring_room_rect_wall.tscn").instantiate()
 	
 func _ready():
 	# 连接区域检测信号

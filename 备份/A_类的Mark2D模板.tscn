@@ -1,0 +1,14 @@
+[gd_scene format=3 uid="uid://bfi2d5h3m6g2p"]
+
+[node name="Marker2D" type="Marker2D"]
+z_as_relative = false
+gizmo_extents = 32.0
+metadata/size = Vector2i(1, 1)
+metadata/priority = 0
+metadata/type = "rock"
+metadata/probability = 1.0
+metadata/pair_seed = -1
+metadata/scene_index = -1
+metadata/explicit_scene = ""
+metadata/group_limit = 0
+metadata/subgroup = ""

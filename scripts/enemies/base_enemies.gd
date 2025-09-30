@@ -253,6 +253,7 @@ func finish_attack():
 #====受伤====
 func take_damage(damage:float,special_info:Dictionary={}):
 	#有甲先扣甲
+	special_info.function.call()
 	if not has_armor:
 		return
 	if armor > 0:

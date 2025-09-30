@@ -1,0 +1,20 @@
+[gd_scene load_steps=3 format=3 uid="uid://cseitwgdjs55b"]
+
+[ext_resource type="Texture2D" uid="uid://dxrpj688iel3r" path="res://assets/grounds/DIY/tree1.png" id="1_d5val"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_ug302"]
+radius = 5.0
+
+[node name="Tree001" type="StaticBody2D"]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+position = Vector2(0, -3)
+shape = SubResource("CircleShape2D_ug302")
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+modulate = Color(0.745098, 0.74902, 0.745098, 1)
+texture_filter = 1
+position = Vector2(0, -72)
+scale = Vector2(1, 0.9)
+texture = ExtResource("1_d5val")
+region_rect = Rect2(0, 224, 160, 160)

@@ -13,10 +13,11 @@ class BulletData:
 	var size:float=1
 	var speed: float = 0
 	var direction: Vector2 = Vector2.ZERO
-	var special_info: Dictionary = {}
 	var start_position: Vector2   #子弹的起始位置
-
+	var special_info: Dictionary = {"function": func():pass}
+	
 var bullet_data: BulletData = BulletData.new()
+
 
 
 func _process(delta):

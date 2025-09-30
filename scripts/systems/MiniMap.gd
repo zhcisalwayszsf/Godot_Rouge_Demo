@@ -185,7 +185,7 @@ func update_player_position(room_name: String):
 	var room_center = room_positions[room_name]
 	
 	if minimap_tiles:
-		var world_pos = minimap_tiles.map_to_local(room_center)
+		var world_pos = minimap_tiles.map_to_local(room_center) + Vector2(-10,0)
 		player_marker.position = world_pos
 		print("玩家位置: %s -> 瓦片(%d,%d) 世界(%.1f,%.1f)" % 
 			[room_name, room_center.x, room_center.y, world_pos.x, world_pos.y])

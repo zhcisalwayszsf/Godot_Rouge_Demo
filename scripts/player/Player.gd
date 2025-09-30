@@ -6,31 +6,66 @@ extends CharacterBody2D
 @onready var weapon_pivot = $Visuals/WeaponPivot
 @onready var skill_pivot = $SkillPivot
 @onready var collision_shape = $CollisionShape2D
+@onready var area:Area2D = $Area2D
 
 # 移动相关
 var move_direction: Vector2 = Vector2.ZERO
+var base_move_speed: float = 300.0
 
-# 位移技能相关
-var is_dashing: bool = false
-var dash_duration: float = 0.0
-var dash_direction: Vector2 = Vector2.ZERO
-var dash_speed: float = 0.0
-var dash_timer: float = 0.0
+#动画相关
+@onready var animatorPlayer = $Visuals/AnimationPlayer
+@onready var animationrTree = $Visuals/AnimationTree
+var last_move_direction:Vector2 = Vector2.DOWN
+
+# 位移技能相关 - 重构后的结构
+var movement_state: MovementState = MovementState.NORMAL
+var dash_data: DashData = DashData.new()
 
 # 特殊状态
-var is_invulnerable: bool = false
-var invulnerable_timer: float = 0.0
-var has_no_collision: bool = false
-var no_collision_timer: float = 0.0
+var status_effects: StatusEffects = StatusEffects.new()
 
 # 原始碰撞层设置
 var original_collision_layer: int
 var original_collision_mask: int
 
+# 原始碰撞层设置
+var original_area_collision_layer: int
+var original_area_collision_mask: int
+
 # 信号
 signal health_changed(current: int, max: int)
 signal energy_changed(current: int, max: int)
 signal ammo_updated(weapon_slot: int, magazine_ammo: int, total_ammo: int)
+
+# 枚举定义
+enum MovementState {
+	NORMAL,      # 正常移动
+	DASHING,     # 冲刺中
+	STUNNED,     # 眩晕
+	ROOTED       # 定身
+}
+
+# 内部类定义
+class DashData:
+	var is_active: bool = false
+	var direction: Vector2 = Vector2.ZERO
+	var speed: float = 0.0
+	var type: int = 0  # 0=dash, 1=blink
+	
+	func reset():
+		is_active = false
+		direction = Vector2.ZERO
+		speed = 0.0
+		type = 0
+
+class StatusEffects:
+	var is_invulnerable: bool = false
+	var has_no_collision: bool = false
+	
+	func reset_all():
+		is_invulnerable = false
+		has_no_collision = false
+
 
 func _ready():
 	print("玩家控制器初始化")
@@ -48,19 +83,32 @@ func _ready():
 	# 从test场景添加测试武器
 	var test_node_link = get_parent()
 	if test_node_link is Node2D:
-		print("test:获取到父节点")
+		#print("test:获取到父节点")
 		if test_node_link.has_signal("test_weapon_component"):
 			test_node_link.test_weapon_component.connect(WeaponSystem.equip_weapon_component)
+
+
+
+func _process(delta: float) -> void:
+
+	pass
 
 func setup_player():
 	"""设置玩家基础属性"""
 	collision_layer = 1  # 玩家层
-	collision_mask = 2 | 3 | 4 |5| 6 |7 
-	 # 敌人层 | 墙壁层 | 空气墙 | 拾取物层 | 特殊敌人
+	collision_mask = 334
+	#collision_mask = 2 | 3 | 4 | 7 | 9 
+	# 敌人层 | 墙壁层 | 实体墙 | 空气墙 | 特殊敌人 |
+	
+	area.collision_layer = 1
+	area.collision_mask = 128
 	
 	# 保存原始碰撞设置
 	original_collision_layer = collision_layer
 	original_collision_mask = collision_mask
+	
+	original_area_collision_layer = area.collision_layer
+	original_area_collision_mask = area.collision_mask
 
 func connect_system_signals():
 	"""连接系统信号"""
@@ -69,9 +117,6 @@ func connect_system_signals():
 	
 	if GameManager:
 		GameManager.state_changed.connect(_on_game_state_changed)
-	
-	#if SkillSystem:
-		#SkillSystem.skill_cast.connect()
 
 func initialize_default_equipment():
 	"""初始化默认装备"""
@@ -85,8 +130,12 @@ func _input(event):
 		return
 	
 	# 武器输入
+	# 武器输入 - 改为使用连发系统
 	if event.is_action_pressed("lb"):
-		WeaponSystem.try_fire()
+		WeaponSystem.start_firing()
+	
+	if event.is_action_released("lb"):
+		WeaponSystem.stop_firing()
 	
 	if event.is_action_pressed("r"):
 		WeaponSystem.start_reload()
@@ -95,18 +144,20 @@ func _input(event):
 		var next_slot = WeaponSystem.get_next_weapon_slot()
 		WeaponSystem.switch_weapon(next_slot)
 	
-	# 技能输入 - 适配新的技能系统
+	# 技能输入
 	if event.is_action_pressed("v"):
 		var target_dir = (get_global_mouse_position() - global_position).normalized()
 		var success = SkillSystem.try_cast_primary_skill(global_position, target_dir)
 		if not success:
-			print("主技能释放失败 - 可能在冷却中或能量不足")
+			#print("主技能释放失败 - 可能在冷却中或能量不足")
+			pass
 	
 	if event.is_action_pressed("e"):
 		var target_dir = (get_global_mouse_position() - global_position).normalized()
 		var success = SkillSystem.try_cast_secondary_skill(global_position, target_dir)
 		if not success:
-			print("副技能释放失败 - 可能在冷却中")
+			#print("副技能释放失败 - 可能在冷却中")
+			pass
 	
 	# 游戏控制
 	if event.is_action_pressed("pause"):
@@ -115,45 +166,62 @@ func _input(event):
 	if event.is_action_pressed("f"):
 		try_pickup_nearby_items()
 
-# === 移动系统 ===
+# === 移动系统 - 重构后 ===
 
 func _physics_process(delta):
 	if not GameManager.is_game_playing():
 		return
-	
-	update_special_states(delta)
-	if is_dashing:
-		handle_dash_movement(delta)
-	else:
-		handle_movement_input()
-		apply_movement()
-	
-	update_visual_direction()
 
-func handle_movement_input():
-	"""处理移动输入"""
+	process_movement(delta)
+	#update_visual_direction()
+	animationrTree.set("parameters/move/blend_position",velocity)
+	animationrTree.set("parameters/move/4/blend_position",last_move_direction)
+
+func process_movement(delta: float):
+	"""处理所有移动逻辑"""
+	match movement_state:
+		MovementState.NORMAL:
+			handle_normal_movement()
+		MovementState.DASHING:
+			handle_dash_movement(delta)
+		MovementState.STUNNED:
+			velocity = Vector2.ZERO
+		MovementState.ROOTED:
+			velocity = Vector2.ZERO
+		_:
+			handle_normal_movement()
+	if velocity.length() >=0.1:
+		last_move_direction = velocity
+	move_and_slide()
+
+func handle_normal_movement():
+	"""处理正常移动"""
 	move_direction = Vector2.ZERO
 	
 	# 检查是否可以移动（施法时是否允许移动）
-	var can_move = true
+	if not can_move_while_casting():
+		velocity = Vector2.ZERO
+		return
+	
+	move_direction = get_input_direction().normalized()
+	velocity = move_direction * get_effective_move_speed()
+
+func can_move_while_casting() -> bool:
+	"""检查施法时是否可以移动"""
 	if SkillSystem.is_casting(0):  # 主技能施法中
 		var primary_skill = SkillSystem.get_skill_data(0)
 		if primary_skill and not primary_skill.can_move_while_casting:
-			can_move = false
+			return false
 	
 	if SkillSystem.is_casting(1):  # 副技能施法中
 		var secondary_skill = SkillSystem.get_skill_data(1)
 		if secondary_skill and not secondary_skill.can_move_while_casting:
-			can_move = false
+			return false
 	
-	if not can_move:
-		return
-	
-	
-	
-	move_direction = get_input_direction().normalized()
+	return true
 
-func get_input_direction()->Vector2:
+func get_input_direction() -> Vector2:
+	"""获取输入方向"""
 	var direction = Vector2.ZERO
 	if Input.is_action_pressed("ui_left"):
 		direction.x -= 1
@@ -166,122 +234,164 @@ func get_input_direction()->Vector2:
 	
 	return direction
 
-func apply_movement():
-	"""应用移动"""
-	velocity = move_direction * PlayerDataManager.get_final_move_speed()
-	move_and_slide()
+func get_effective_move_speed() -> float:
+	"""获取有效移动速度（考虑状态效果）"""
+	return PlayerDataManager.get_final_move_speed()
 
-func update_visual_direction():
-	"""更新视觉方向"""
-	var mouse_pos = get_global_mouse_position()
-	if mouse_pos.x < global_position.x:
-		body_sprite.scale.x = -abs(body_sprite.scale.x)
-	else:
-		body_sprite.scale.x = abs(body_sprite.scale.x)
+# === 位移技能系统===
 
-# === 位移技能系统 ===
-
-func dash(direction: Vector2, distance: float, duration: float = 0.2):
-	"""执行位移技能"""
-	if is_dashing:
+func dash(direction: Vector2, distance: float, duration: float = 0.2) -> bool:
+	"""执行冲刺位移"""
+	if movement_state == MovementState.DASHING:
 		return false
 	
-	is_dashing = true
-	dash_direction = direction.normalized()
-	dash_speed = distance / duration
-	dash_duration = duration
-	dash_timer = 0.0
+	return start_dash_movement(direction.normalized(), distance / duration, duration, 0)
+
+func blink_to(target_global_pos: Vector2) -> bool:
+	"""执行闪现位移"""
+	if movement_state == MovementState.DASHING:
+		return false
 	
-	print("玩家开始位移: 方向=", dash_direction, " 速度=", dash_speed, " 持续时间=", duration)
+	global_position = target_global_pos
+	#print("玩家闪现到位置: ", target_global_pos)
 	return true
 
-func blink_to(target_global_pos: Vector2):
-	# 直接设置到目标位置
-	global_position = target_global_pos
+func start_dash_movement(direction: Vector2, speed: float, duration: float, dash_type: int) -> bool:
+	"""开始位移移动 - 使用TimerPool的便捷方法"""
+	# 如果已经在dash中，先结束之前的dash
+	if movement_state == MovementState.DASHING:
+		_on_dash_finished()
+	
+	# 设置位移数据
+	dash_data.is_active = true
+	dash_data.direction = direction
+	dash_data.speed = speed
+	dash_data.type = dash_type
+	
+	# 使用TimerPool的便捷方法创建一次性计时器
+	var dash_timer = TimerPool.create_one_shot_timer(duration, _on_dash_finished)
+	dash_timer.start()
+	# 切换状态
+	movement_state = MovementState.DASHING
+	
+	#print("开始位移: 方向=", direction, " 速度=", speed, " 持续时间=", duration)
+	return true
 
 func handle_dash_movement(delta: float):
-	"""处理位移移动"""
-	dash_timer += delta if dash_timer <99999 else 100
+	if not dash_data.is_active:
+		movement_state = MovementState.NORMAL
+		return
+	# 只负责应用速度，时间控制交给Timer
+	velocity = dash_data.direction * dash_data.speed
+
+func _on_dash_finished():
+	"""位移结束回调"""
+	if movement_state == MovementState.DASHING:
+		#print("玩家位移结束")
+		movement_state = MovementState.NORMAL
+		dash_data.reset()
+
+
+# === 特殊状态系统 - 重构后 ===
+func set_invulnerable(duration: float = 0.0, invulnerable: bool = true):
+	"""设置无敌状态 - 使用便捷方法"""
+	status_effects.is_invulnerable = invulnerable
 	
-	if dash_timer >= dash_duration:
-		# 位移结束
-		is_dashing = false
-		dash_timer = 0.0
-		print("玩家位移结束")
-	else:
-		# 执行位移
-		velocity = dash_direction * dash_speed
-		move_and_slide()
-
-# === 特殊状态系统 ===
-
-func update_special_states(delta: float):
-	"""更新特殊状态"""
-	# 更新无敌状态
-	if is_invulnerable:
-		invulnerable_timer -= delta
-		if invulnerable_timer <= 0:
-			set_invulnerable(false)
-	
-	# 更新无碰撞状态
-	if has_no_collision:
-		no_collision_timer -= delta
-		if no_collision_timer <= 0:
-			set_no_collision(false)
-
-func set_invulnerable(duration: float = 0.0,invulnerable: bool=true):
-	"""设置无敌状态"""
-	is_invulnerable = invulnerable
 	if invulnerable and duration > 0:
-		invulnerable_timer = duration
-		print("玩家进入无敌状态，持续时间: ", duration)
-		# 可以添加视觉效果
-		create_invulnerable_effect()
-	else:
-		invulnerable_timer = 0.0
-		print("玩家无敌状态结束")
+		#print("玩家进入无敌状态，持续时间: ", duration)
+		create_invulnerable_effect(duration)
+		
+		# 使用TimerPool的便捷方法
+		var invulnerable_timer  = TimerPool.create_one_shot_timer(duration, func():
+			status_effects.is_invulnerable = false
+			#print("玩家无敌状态结束")
+		)
+		invulnerable_timer.start()
+	#else:
+		#print("玩家无敌状态结束")
 
-func set_no_collision( duration: float = 0.0,no_collision: bool=true):
-	"""设置无碰撞状态"""
-	has_no_collision = no_collision
+# 修复无碰撞状态
+func set_no_collision(duration: float = 0.0, no_collision: bool = true):
+	"""设置无碰撞状态 - 使用便捷方法"""
+	status_effects.has_no_collision = no_collision
+	
 	if no_collision and duration > 0:
-		no_collision_timer = duration
-		# 修改碰撞层，让玩家可以穿过敌人和子弹
-		#要屏蔽的层
-		var no_need_layer = (1<<2) | (1<<3) | (1<<5) | (1<<7)
-		collision_mask = collision_mask & ~  no_need_layer# 移除敌人层
-		print("玩家进入无碰撞状态，持续时间: ", duration)
+		#print("玩家进入无碰撞状态，持续时间: ", duration)
+		
+		# 修改碰撞层
+		
+		collision_mask = 0
+		area.collision_layer = 0
+		# 使用TimerPool的便捷方法
+		var no_collision_timer  =TimerPool.create_one_shot_timer(duration, func():
+			status_effects.has_no_collision = false
+			collision_mask = original_collision_mask
+			area.collision_layer = original_area_collision_layer
+			#print("玩家无碰撞状态结束")
+		)
+		no_collision_timer.start()
 	else:
-		no_collision_timer = 0.0
-		# 恢复碰撞设置
 		collision_mask = original_collision_mask
-		print("玩家无碰撞状态结束")
+		#print("玩家无碰撞状态结束")
 
-func create_invulnerable_effect():
+func create_invulnerable_effect(duration: float):
 	"""创建无敌视觉效果"""
 	var tween = create_tween()
 	tween.set_loops()
 	tween.tween_property(body_sprite, "modulate:a", 0.5, 0.1)
 	tween.tween_property(body_sprite, "modulate:a", 1.0, 0.1)
 	
-	# 在无敌时间结束时停止效果
-	var effect_timer = Timer.new()
-	effect_timer.wait_time = invulnerable_timer
-	effect_timer.one_shot = true
-	effect_timer.timeout.connect(func():
+	# 使用TimerPool管理效果结束
+	var effect_timer =TimerPool.create_one_shot_timer(duration, func():
 		tween.kill()
 		body_sprite.modulate.a = 1.0
-		effect_timer.queue_free()
 	)
-	add_child(effect_timer)
 	effect_timer.start()
 
-# === 伤害系统 ===
+# === 控制效果系统 - 重构后 ===
+func apply_stun(duration: float):
+	"""应用眩晕效果"""
+	movement_state = MovementState.STUNNED
+	
+	var stun_timer = TimerPool.create_one_shot_timer(duration, func():
+		if movement_state == MovementState.STUNNED:
+			movement_state = MovementState.NORMAL
+		#print("眩晕效果结束")
+	)
+	stun_timer.start()
+	#print("玩家被眩晕，持续时间: ", duration)
 
+func apply_root(duration: float):
+	"""应用定身效果"""
+	var old_state = movement_state
+	movement_state = MovementState.ROOTED
+	
+	var root_timer = TimerPool.create_one_shot_timer(duration, func():
+		if movement_state == MovementState.ROOTED:
+			movement_state = MovementState.NORMAL if old_state == MovementState.ROOTED else old_state
+		#print("定身效果结束")
+	)
+	root_timer.start()
+	#print("玩家被定身，持续时间: ", duration)
+
+func apply_slow(duration: float, slow_factor: float):
+	"""应用减速效果"""
+	var original_speed = PlayerDataManager.get_final_move_speed()
+	PlayerDataManager.player_stats.move_speed *= slow_factor
+	
+	var slow_timer = TimerPool.create_one_shot_timer(duration, func():
+		PlayerDataManager.player_stats.move_speed = original_speed
+		##print("减速效果结束")
+	)
+	slow_timer.start()
+	#print("玩家被减速，减速系数: ", slow_factor, " 持续时间: ", duration)
+
+# === 伤害系统 ===
+'''
 func take_damage(damage: int, damage_type: int = 0):
-	"""承受伤害 - 适配新的伤害类型系统"""
-	if is_invulnerable:
-		print("玩家处于无敌状态，免疫伤害")
+	#承受伤害 - 适配新的伤害类型系统
+	if status_effects.is_invulnerable:
+		#print("玩家处于无敌状态，免疫伤害")
 		return
 	
 	# 根据伤害类型计算实际伤害
@@ -294,7 +404,7 @@ func take_damage(damage: int, damage_type: int = 0):
 	
 	if was_killed:
 		handle_death()
-
+'''
 func calculate_damage_by_type(base_damage: int, damage_type: int) -> int:
 	"""根据伤害类型计算实际伤害"""
 	var actual_damage = base_damage
@@ -315,78 +425,29 @@ func calculate_damage_by_type(base_damage: int, damage_type: int) -> int:
 
 func apply_dot(damage_per_tick: float, duration: float, frequency: float):
 	"""应用持续伤害效果"""
-	var dot_timer = Timer.new()
 	var tick_interval = 1.0 / frequency
 	var ticks_remaining = int(duration * frequency)
 	
-	dot_timer.wait_time = tick_interval
-	dot_timer.timeout.connect(func():
+	# 创建循环Timer来处理DOT
+	var dot_timer = TimerPool.create_loop_timer(tick_interval, func():
 		if ticks_remaining > 0:
 			PlayerDataManager.damage_player(int(damage_per_tick))
 			ticks_remaining -= 1
-			print("持续伤害tick: ", damage_per_tick, " 剩余次数: ", ticks_remaining)
+			#print("持续伤害tick: ", damage_per_tick, " 剩余次数: ", ticks_remaining)
 		else:
-			dot_timer.queue_free()
+			# DOT结束，归还Timer（这由TimerPool内部处理）
+			pass
 	)
 	
-	add_child(dot_timer)
-	dot_timer.start()
-	print("应用持续伤害: ", damage_per_tick, "/tick, 持续时间: ", duration, "s, 频率: ", frequency, "/s")
-
-func apply_control_effect(effect_type: int, duration: float):
-	"""应用控制效果"""
-	match effect_type:
-		0: # 眩晕
-			apply_stun(duration)
-		1: # 减速
-			apply_slow(duration, 0.5)  # 减速50%
-		2: # 定身
-			apply_root(duration)
-		3: # 沉默
-			apply_silence(duration)
-
-func apply_stun(duration: float):
-	"""应用眩晕效果"""
-	set_physics_process(false)
-	var stun_timer = Timer.new()
-	stun_timer.wait_time = duration
-	stun_timer.one_shot = true
-	stun_timer.timeout.connect(func():
-		set_physics_process(true)
-		stun_timer.queue_free()
-		print("眩晕效果结束")
+	# 设置总持续时间，到时间后自动停止
+	var dat_timer = TimerPool.create_one_shot_timer(duration, func():
+		if is_instance_valid(dot_timer):
+			dot_timer.stop()
+			TimerPool.return_timer(dot_timer)
 	)
-	add_child(stun_timer)
-	stun_timer.start()
-	print("玩家被眩晕，持续时间: ", duration)
-
-func apply_slow(duration: float, slow_factor: float):
-	"""应用减速效果"""
-	var original_speed = PlayerDataManager.get_final_move_speed()
-	PlayerDataManager.player_stats.move_speed *= slow_factor
+	dat_timer.start()
 	
-	var slow_timer = Timer.new()
-	slow_timer.wait_time = duration
-	slow_timer.one_shot = true
-	slow_timer.timeout.connect(func():
-		PlayerDataManager.player_stats.move_speed = original_speed
-		slow_timer.queue_free()
-		print("减速效果结束")
-	)
-	add_child(slow_timer)
-	slow_timer.start()
-	print("玩家被减速，减速系数: ", slow_factor, " 持续时间: ", duration)
-
-func apply_root(duration: float):
-	"""应用定身效果"""
-	var can_move_backup = true
-	# 这里需要实现定身逻辑
-	print("玩家被定身，持续时间: ", duration)
-
-func apply_silence(duration: float):
-	"""应用沉默效果"""
-	# 这里需要实现沉默逻辑，禁用技能释放
-	print("玩家被沉默，持续时间: ", duration)
+	#print("应用持续伤害: ", damage_per_tick, "/tick, 持续时间: ", duration, "s, 频率: ", frequency, "/s")
 
 func create_damage_effect(damage_type: int = 0):
 	"""创建受伤视觉效果"""
@@ -407,11 +468,9 @@ func handle_death():
 	"""处理玩家死亡"""
 	set_process_input(false)
 	set_physics_process(false)
+	status_effects.reset_all()
+	dash_data.reset()
 	AudioSystem.play_sound("player_death")
-
-# === 技能回调 ===
-
-
 
 # === 拾取系统 ===
 
@@ -473,6 +532,28 @@ func sync_health_energy():
 	health_changed.emit(PlayerDataManager.get_health(), PlayerDataManager.get_max_health())
 	energy_changed.emit(PlayerDataManager.get_energy(), PlayerDataManager.get_max_energy())
 
+# === 公共接口方法 ===
+
+func is_dashing() -> bool:
+	"""检查是否在位移中"""
+	return movement_state == MovementState.DASHING
+
+func is_invulnerable() -> bool:
+	"""检查是否无敌"""
+	return status_effects.is_invulnerable
+
+func has_no_collision() -> bool:
+	"""检查是否无碰撞"""
+	return status_effects.has_no_collision
+
+func is_stunned() -> bool:
+	"""检查是否眩晕"""
+	return movement_state == MovementState.STUNNED
+
+func is_rooted() -> bool:
+	"""检查是否定身"""
+	return movement_state == MovementState.ROOTED
+
 # === 调试功能 ===
 
 func debug_print_player_info():
@@ -481,13 +562,15 @@ func debug_print_player_info():
 	print("位置: ", global_position)
 	print("血量: ", PlayerDataManager.get_health(), "/", PlayerDataManager.get_max_health())
 	print("能量: ", PlayerDataManager.get_energy(), "/", PlayerDataManager.get_max_energy())
-	print("正在位移: ", is_dashing)
-	print("无敌状态: ", is_invulnerable)
-	print("无碰撞状态: ", has_no_collision)
-	
-	# 技能状态
+	print("移动状态: ", MovementState.keys()[movement_state])
+	print("位移中: ", is_dashing())
+	print("无敌状态: ", is_invulnerable())
+	print("无碰撞状态: ", has_no_collision())
 	print("主技能冷却: ", SkillSystem.get_cooldown_timer(0))
 	print("副技能冷却: ", SkillSystem.get_cooldown_timer(1))
-	print("主技能施法中: ", SkillSystem.is_casting(0))
-	print("副技能施法中: ", SkillSystem.is_casting(1))
 	print("=================")
+
+func _exit_tree():
+	"""节点退出场景时清理资源"""
+	status_effects.reset_all()
+	dash_data.reset()

@@ -27,8 +27,9 @@ SkillSystem="*res://scripts/managers/SkillSystem.gd"
 WeaponDamageSystem="*res://scripts/managers/WeaponDamageSystem.gd"
 SkillDamageSystem="*res://scripts/managers/SkillDamageSystem.gd"
 BulletPool="*res://scripts/objectPool/BulletPool.gd"
-WeaponId="*res://scripts/ID_list/Weapon_ID.gd"
+WeaponId="*res://ID_list/Weapon_ID.gd"
 NormalLevelGenerator="*res://scripts/systems/Normal_Level_Generator.gd"
+LevelManager="*res://scripts/systems/LevelManager.gd"
 
 [display]
 

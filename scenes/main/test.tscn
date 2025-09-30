@@ -1,11 +1,12 @@
-[gd_scene load_steps=5 format=3 uid="uid://bj4ndy3u1105l"]
+[gd_scene load_steps=6 format=3 uid="uid://bj4ndy3u1105l"]
 
 [ext_resource type="Script" uid="uid://csrmdflw1j3vi" path="res://scenes/main/test.gd" id="1_bdhu5"]
 [ext_resource type="PackedScene" uid="uid://cufqe8v166o1p" path="res://scenes/player/Player.tscn" id="1_h3hfy"]
 [ext_resource type="PackedScene" uid="uid://bvlnr5vdnrdg5" path="res://scenes/ui/PlayerHUD.tscn" id="2_bdhu5"]
 [ext_resource type="PackedScene" uid="uid://cudq8phrlu4ot" path="res://scenes/ui/MiniMap.tscn.tscn" id="4_jbo7p"]
+[ext_resource type="PackedScene" uid="uid://68f77xuutfm0" path="res://scenes/enemies/Floating_Skeleton.tscn" id="5_pte8o"]
 
-[node name="Node2D" type="Node2D"]
+[node name="Test_Game_Main" type="Node2D"]
 y_sort_enabled = true
 script = ExtResource("1_bdhu5")
 
@@ -18,3 +19,6 @@ position = Vector2(224, 32)
 zoom = Vector2(1.2, 1.2)
 
 [node name="MiniMap" parent="." instance=ExtResource("4_jbo7p")]
+
+[node name="Floating_Skeleton" parent="." instance=ExtResource("5_pte8o")]
+position = Vector2(519, 146)

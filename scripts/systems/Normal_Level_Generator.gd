@@ -1,7 +1,79 @@
 # Normal_Level_Generator.gd
 # 单例模式的随机关卡生成器 - 返回详细数据结构版本
-extends Node
 
+extends Node
+"""
+================================================================================
+						关卡生成器参数说明
+================================================================================
+
+主要生成参数及其作用：
+
+1. GRID_SIZE (int, 范围: 3-10, 默认: 5)
+   - 作用：定义关卡的网格尺寸（N×N）
+   - 效果：
+	 * 3-4：紧凑型关卡，适合小型战斗场景
+	 * 5-6：标准关卡，平衡的探索与战斗空间
+	 * 7-10：大型关卡，适合开放探索和复杂路径设计
+   
+2. TARGET_ROOMS (int, 范围: 3-25, 默认: 8)
+   - 作用：设定期望生成的房间数量
+   - 效果：
+	 * 3-5：线性流程，简单直接的关卡结构
+	 * 6-10：中等密度，有适度的探索分支
+	 * 11+：高密度，复杂的迷宫式布局
+   - 注意：实际生成数量可能略少于目标值，取决于网格大小和布局算法
+
+3. CONNECTION_RATE (float, 范围: 0.0-1.0, 默认: 0.5)
+   - 作用：控制房间之间的连接密度
+   - 效果：
+	 * 0.0-0.3：最小连接，形成树状结构，无循环路径
+	 * 0.4-0.6：中等连接，有少量循环和可选路径
+	 * 0.7-1.0：高连接度，多条路径和捷径，类似网状结构
+   - 应用：低值适合线性叙事，高值适合探索型玩法
+
+4. ENABLE_PARTITIONS (bool, 默认: true)
+   - 作用：是否允许生成隔断和死胡同
+   - 效果：
+	 * true：可能产生独立区域、死胡同，增加探索深度
+	 * false：确保所有潜在连接都开放，形成高度互联的空间
+   - 建议：解谜类关卡设为true，动作类关卡设为false
+
+5. COMPLEXITY_BIAS (float, 范围: 0.0-1.0, 默认: 0.5)
+   - 作用：控制关卡布局的复杂度倾向
+   - 效果：
+	 * 0.0-0.3：简单布局（集群式、线性）
+	 * 0.4-0.6：平衡布局（有机生长）
+	 * 0.7-1.0：复杂布局（十字形、环形、路径式）
+   - 影响：同时影响房间分布策略和连接权重计算
+
+6. RANDOM_SEED (int, 默认: -1)
+   - 作用：控制随机数生成器的种子
+   - 效果：
+	 * -1：每次生成不同的关卡（使用系统时间）
+	 * 正整数：可重现的关卡生成（相同种子产生相同布局）
+   - 用途：调试、关卡分享、每日挑战等
+
+7. DEBUG_MODE (bool, 默认: false)
+   - 作用：开启/关闭调试输出
+   - 效果：
+	 * true：输出详细的生成过程日志
+	 * false：静默运行，仅输出错误信息
+   
+生成算法流程：
+1. 第一阶段：根据COMPLEXITY_BIAS选择布局策略生成房间
+2. 第二阶段：分析所有潜在连接并计算权重
+3. 第三阶段：根据CONNECTION_RATE选择性开启连接
+4. 第四阶段：验证连通性，必要时修复孤岛
+
+使用建议：
+- 新手关卡：GRID_SIZE=4, TARGET_ROOMS=5, CONNECTION_RATE=0.3
+- 标准关卡：GRID_SIZE=5, TARGET_ROOMS=8, CONNECTION_RATE=0.5
+- 挑战关卡：GRID_SIZE=7, TARGET_ROOMS=15, CONNECTION_RATE=0.7
+- 迷宫关卡：GRID_SIZE=8, TARGET_ROOMS=20, CONNECTION_RATE=0.8
+
+================================================================================
+"""
 # ============== 核心参数 ==============
 var GRID_SIZE: int = 5
 var TARGET_ROOMS: int = 8
@@ -10,6 +82,7 @@ var ENABLE_PARTITIONS: bool = true
 var COMPLEXITY_BIAS: float = 0.5
 var RANDOM_SEED: int = -1
 var DEBUG_MODE: bool = false
+var HORIZONTAL_CONNECTION_BIAS: float = 0.3  # 新增：横向连接偏好度 (0.0-1.0)
 
 const ROOM_WIDTH = 1664
 const ROOM_HEIGHT = 1024
@@ -37,7 +110,7 @@ class RoomInfo:
 	var connected_neighbors: Array = [false, false, false, false]
 	var neighbors: Array = [null, null, null, null]
 	var diagonal_neighbors: Array = [false, false, false, false]  # 新增：[左上, 右上, 左下, 右下]
-	
+	var HORIZONTAL_CONNECTION_BIAS: float = 0.3  # 新增：横向连接偏好度 (0.0-1.0)
 	func to_dict() -> Dictionary:
 		return {
 			"room_name": room_name,
@@ -57,7 +130,8 @@ class level_config:
 		"ENABLE_PARTITIONS": true as bool,
 		"COMPLEXITY_BIAS": 0.5 as float,
 		"RANDOM_SEED": -1 as int,
-		"DEBUG_MODE":false as bool 
+		"DEBUG_MODE":false as bool,
+		"HORIZONTAL_CONNECTION_BIAS": 0.3 as float # 新增：横向连接偏好度 (0.0-1.0)
 	}
 	
 var room_template = "res://scenes/rooms/normal_rooms/room_frame.tscn"
@@ -111,7 +185,8 @@ func generate(
 	enable_partitions: bool = true,
 	complexity_bias: float = 0.5,
 	random_seed: int = -1,
-	debug_mode: bool = false
+	debug_mode: bool = false,
+	horizontal_connection_bias: float = 0.3  
 ) -> Dictionary:
 	"""主方法 - 使用参数生成关卡，返回详细数据"""
 	
@@ -122,7 +197,7 @@ func generate(
 	COMPLEXITY_BIAS = complexity_bias
 	RANDOM_SEED = random_seed
 	DEBUG_MODE = debug_mode
-	
+	HORIZONTAL_CONNECTION_BIAS = horizontal_connection_bias  # 设置新参数
 	var level_data = _generate_level_internal()
 	return _convert_level_data_to_dict(level_data)
 
@@ -136,7 +211,7 @@ func generate_with_config(config: Dictionary) -> Dictionary:
 	COMPLEXITY_BIAS = config.COMPLEXITY_BIAS
 	RANDOM_SEED = config.RANDOM_SEED
 	DEBUG_MODE = config.DEBUG_MODE 
-	
+	HORIZONTAL_CONNECTION_BIAS = config.HORIZONTAL_CONNECTION_BIAS
 
 	var level_data = _generate_level_internal()
 	return _convert_level_data_to_dict(level_data)
@@ -754,18 +829,170 @@ func phase_two_analyze_connections():
 	
 	_log_debug("找到 %d 个潜在连接" % potential_connections.size())
 
+
+# 修改 calculate_connection_weight 函数
 func calculate_connection_weight(pos1: Vector2i, pos2: Vector2i, dir: Direction) -> float:
 	var weight = 1.0
 	var center = Vector2i(GRID_SIZE / 2 + 1, GRID_SIZE / 2 + 1)
 	var avg_distance = (pos1.distance_to(center) + pos2.distance_to(center)) / 2
 	weight += (GRID_SIZE - avg_distance) * 0.1
 	
+	# 修改：根据 HORIZONTAL_CONNECTION_BIAS 调整横向连接权重
+	# 值越低，横向连接越不容易被选中
 	if dir == Direction.LEFT or dir == Direction.RIGHT:
-		weight += 0.1
+		weight *= HORIZONTAL_CONNECTION_BIAS  # 原来是 += 0.1，现在改为乘以偏好度
+	else:  # 垂直方向
+		weight *= (2.0 - HORIZONTAL_CONNECTION_BIAS)  # 反向加权垂直连接
 	
 	weight += COMPLEXITY_BIAS * 0.5
 	
 	return weight
+
+# 添加新的连接选择策略
+func select_connections_with_direction_balance() -> Array:
+	"""考虑方向平衡的连接选择"""
+	var selected = []
+	
+	# 首先确保基本连通性
+	var mst_connections = build_minimum_spanning_tree()
+	selected.append_array(mst_connections)
+	
+	# 统计已选连接的方向分布
+	var horizontal_count = 0
+	var vertical_count = 0
+	
+	for conn in selected:
+		if conn.direction == Direction.LEFT or conn.direction == Direction.RIGHT:
+			horizontal_count += 1
+		else:
+			vertical_count += 1
+	
+	# 收集剩余的潜在连接并分类
+	var remaining_horizontal = []
+	var remaining_vertical = []
+	
+	for conn in potential_connections:
+		if conn not in selected:
+			if conn.direction == Direction.LEFT or conn.direction == Direction.RIGHT:
+				remaining_horizontal.append(conn)
+			else:
+				remaining_vertical.append(conn)
+	
+	# 根据方向平衡添加额外连接
+	var extra_count = int((potential_connections.size() - mst_connections.size()) * CONNECTION_RATE)
+	
+	for i in range(extra_count):
+		var next_conn = null
+		
+		# 优先选择数量较少的方向
+		var h_ratio = float(horizontal_count) / max(1, horizontal_count + vertical_count)
+		
+		# 根据当前比例和目标偏好选择方向
+		if h_ratio > HORIZONTAL_CONNECTION_BIAS and not remaining_vertical.is_empty():
+			# 横向过多，优先选择垂直
+			next_conn = remaining_vertical[rng.randi() % remaining_vertical.size()]
+			remaining_vertical.erase(next_conn)
+			vertical_count += 1
+		elif h_ratio < HORIZONTAL_CONNECTION_BIAS and not remaining_horizontal.is_empty():
+			# 垂直过多，选择横向
+			next_conn = remaining_horizontal[rng.randi() % remaining_horizontal.size()]
+			remaining_horizontal.erase(next_conn)
+			horizontal_count += 1
+		else:
+			# 平衡状态，随机选择
+			var all_remaining = remaining_horizontal + remaining_vertical
+			if not all_remaining.is_empty():
+				next_conn = all_remaining[rng.randi() % all_remaining.size()]
+				if next_conn in remaining_horizontal:
+					remaining_horizontal.erase(next_conn)
+					horizontal_count += 1
+				else:
+					remaining_vertical.erase(next_conn)
+					vertical_count += 1
+		
+		if next_conn and should_add_connection_with_pattern_check(next_conn, selected):
+			selected.append(next_conn)
+	
+	return selected
+
+# 添加模式检查，避免过度直连
+func should_add_connection_with_pattern_check(conn: PotentialConnection, existing: Array) -> bool:
+	"""检查是否应该添加连接，避免过度直连"""
+	
+	# 原有的连接度检查
+	var pos1_connections = 0
+	var pos2_connections = 0
+	var pos1_horizontal = 0
+	var pos2_horizontal = 0
+	
+	for existing_conn in existing:
+		if existing_conn.pos1 == conn.pos1 or existing_conn.pos2 == conn.pos1:
+			pos1_connections += 1
+			if existing_conn.direction == Direction.LEFT or existing_conn.direction == Direction.RIGHT:
+				pos1_horizontal += 1
+				
+		if existing_conn.pos1 == conn.pos2 or existing_conn.pos2 == conn.pos2:
+			pos2_connections += 1
+			if existing_conn.direction == Direction.LEFT or existing_conn.direction == Direction.RIGHT:
+				pos2_horizontal += 1
+	
+	# 限制总连接数
+	var max_connections = 4
+	if pos1_connections >= max_connections or pos2_connections >= max_connections:
+		return false
+	
+	# 特殊检查：如果这是横向连接，检查是否已有太多横向连接
+	if conn.direction == Direction.LEFT or conn.direction == Direction.RIGHT:
+		# 如果任一房间的横向连接已经达到2个，则大概率拒绝
+		if pos1_horizontal >= 2 or pos2_horizontal >= 2:
+			return rng.randf() < 0.1  # 只有10%概率接受
+		# 如果都已有1个横向连接，50%概率拒绝
+		elif pos1_horizontal >= 1 and pos2_horizontal >= 1:
+			return rng.randf() < 0.5
+	
+	# 检查是否会形成过于简单的矩形网格
+	if is_creating_grid_pattern(conn, existing):
+		return rng.randf() < 0.3  # 降低形成网格的概率
+	
+	# 根据复杂度偏好决定
+	if COMPLEXITY_BIAS > 0.6:
+		return rng.randf() < 0.6
+	else:
+		return rng.randf() < 0.4
+
+# 检测是否形成网格模式
+func is_creating_grid_pattern(conn: PotentialConnection, existing: Array) -> bool:
+	"""检测添加此连接是否会形成简单的网格模式"""
+	
+	# 检查是否会形成一个完整的矩形
+	var pos1 = conn.pos1
+	var pos2 = conn.pos2
+	
+	# 对于横向连接，检查上下是否都有平行连接
+	if conn.direction == Direction.LEFT or conn.direction == Direction.RIGHT:
+		var above1 = pos1 + Vector2i(0, -1)
+		var above2 = pos2 + Vector2i(0, -1)
+		var below1 = pos1 + Vector2i(0, 1)
+		var below2 = pos2 + Vector2i(0, 1)
+		
+		var has_above_parallel = false
+		var has_below_parallel = false
+		
+		for exist in existing:
+			# 检查上方平行连接
+			if (exist.pos1 == above1 and exist.pos2 == above2) or \
+			   (exist.pos1 == above2 and exist.pos2 == above1):
+				has_above_parallel = true
+			# 检查下方平行连接
+			if (exist.pos1 == below1 and exist.pos2 == below2) or \
+			   (exist.pos1 == below2 and exist.pos2 == below1):
+				has_below_parallel = true
+		
+		return has_above_parallel and has_below_parallel
+	
+	return false
+
+
 
 func has_connection_pair(conn: PotentialConnection) -> bool:
 	for existing in potential_connections:
@@ -775,6 +1002,7 @@ func has_connection_pair(conn: PotentialConnection) -> bool:
 	return false
 
 # ============== 第三阶段：连接选择与生长 ==============
+# 修改 phase_three_connection_growth 函数
 func phase_three_connection_growth():
 	active_connections.clear()
 	
@@ -782,8 +1010,20 @@ func phase_three_connection_growth():
 		active_connections = potential_connections.duplicate()
 		_log_debug("隔断禁用：开通全部 %d 个连接" % active_connections.size())
 	else:
-		active_connections = select_connections_intelligently()
-		_log_debug("智能选择：开通 %d/%d 个连接" % [active_connections.size(), potential_connections.size()])
+		# 使用新的方向平衡选择策略
+		active_connections = select_connections_with_direction_balance()
+		_log_debug("方向平衡选择：开通 %d/%d 个连接" % [active_connections.size(), potential_connections.size()])
+		
+		# 打印方向统计
+		if DEBUG_MODE:
+			var h_count = 0
+			var v_count = 0
+			for conn in active_connections:
+				if conn.direction == Direction.LEFT or conn.direction == Direction.RIGHT:
+					h_count += 1
+				else:
+					v_count += 1
+			_log_debug("连接方向分布 - 横向: %d, 纵向: %d" % [h_count, v_count])
 	
 	apply_connections()
 

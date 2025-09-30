@@ -1,0 +1,7 @@
+[gd_scene format=3 uid="uid://bu1p7af7ld0y2"]
+
+[node name="BRoomContent" type="Node2D"]
+
+[node name="BlockGrid" type="Node2D" parent="."]
+
+[node name="EntityLayer" type="Node2D" parent="."]

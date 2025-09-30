@@ -1,7 +1,7 @@
-[gd_scene load_steps=3 format=3 uid="uid://cephmacye83ew"]
+[gd_scene load_steps=3 format=3 uid="uid://ch42mbp8d2xk2"]
 
-[ext_resource type="PackedScene" uid="uid://c1020k13uujwh" path="res://scenes/rooms/floor_layers/Spring/spring_room_floor.tscn" id="1_sfnay"]
-[ext_resource type="PackedScene" uid="uid://de5r2rgny5g7q" path="res://scenes/rooms/floor_layers/Spring/spring_room_rect_wall.tscn" id="2_2h73h"]
+[ext_resource type="PackedScene" uid="uid://c1020k13uujwh" path="res://scenes/rooms/normal_rooms/floor_layers/Spring/spring_room_floor.tscn" id="1_sfnay"]
+[ext_resource type="PackedScene" uid="uid://de5r2rgny5g7q" path="res://scenes/rooms/normal_rooms/floor_layers/Spring/spring_room_rect_wall.tscn" id="2_2h73h"]
 
 [node name="Node2D" type="Node2D"]
 

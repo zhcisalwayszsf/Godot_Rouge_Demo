@@ -534,7 +534,9 @@ func execute_fire(weapon_data: WeaponData, weapon_component: WeaponComponent):
 	var direction = (PlayerDataManager.player_node.get_global_mouse_position() - muzzle_point.global_position).normalized()
 	bullet_data.direction = get_weapon_precision(weapon_data,direction)
 	bullet_data.start_position = muzzle_point.global_position
-
+	#bullet_data.special_info = {"function":test}
+	#bullet_data.special_info = {"function":func():print("子弹的附加函数运行了")}
+	
 	# bullet_data.special_info = {} # 在这里添加特殊效果信息
 	
 	
