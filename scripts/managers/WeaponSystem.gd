@@ -536,7 +536,7 @@ func execute_fire(weapon_data: WeaponData, weapon_component: WeaponComponent):
 	bullet_data.start_position = muzzle_point.global_position
 	#bullet_data.special_info = {"function":test}
 	#bullet_data.special_info = {"function":func():print("子弹的附加函数运行了")}
-	
+	bullet_data.special_info = weapon_data.special_func if weapon_data.special_func else func():pass
 	# bullet_data.special_info = {} # 在这里添加特殊效果信息
 	
 	

@@ -1,0 +1,37 @@
+[gd_scene load_steps=6 format=3 uid="uid://24xsji0si7bx"]
+
+[ext_resource type="Texture2D" uid="uid://gp4pkbfgnwf3" path="res://assets/grounds/Sprout Lands - Sprites - Basic pack/Objects/Basic_Plants.png" id="1_7gl4t"]
+[ext_resource type="Texture2D" uid="uid://cafoulikun3lu" path="res://assets/grounds/Sprout Lands - Sprites - Basic pack/Objects/Basic_Grass_Biom_things.png" id="2_cysa8"]
+
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_r2rpr"]
+texture = ExtResource("1_7gl4t")
+1:0/0 = 0
+2:0/0 = 0
+3:0/0 = 0
+4:0/0 = 0
+1:1/0 = 0
+2:1/0 = 0
+3:1/0 = 0
+
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_ccx48"]
+texture = ExtResource("2_cysa8")
+8:1/0 = 0
+7:1/0 = 0
+6:1/0 = 0
+5:1/0 = 0
+6:3/0 = 0
+7:3/0 = 0
+7:2/0 = 0
+6:2/0 = 0
+4:2/0 = 0
+3:2/0 = 0
+6:0/0 = 0
+
+[sub_resource type="TileSet" id="TileSet_h860a"]
+sources/1 = SubResource("TileSetAtlasSource_ccx48")
+sources/0 = SubResource("TileSetAtlasSource_r2rpr")
+
+[node name="TileScene" type="TileMapLayer"]
+z_index = -6
+z_as_relative = false
+tile_set = SubResource("TileSet_h860a")

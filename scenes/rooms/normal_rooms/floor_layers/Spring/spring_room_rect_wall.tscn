@@ -3,7 +3,7 @@
 [ext_resource type="TileSet" uid="uid://d062r1o4svndh" path="res://备份/wall_tile_set.tres" id="1_hmtbu"]
 
 [node name="spring_room_rect_wall" type="TileMapLayer"]
-z_index = -2
+z_index = -6
 z_as_relative = false
 y_sort_enabled = true
 texture_filter = 1

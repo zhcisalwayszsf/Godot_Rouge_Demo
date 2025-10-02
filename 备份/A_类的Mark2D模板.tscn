@@ -1,8 +1,29 @@
-[gd_scene format=3 uid="uid://bfi2d5h3m6g2p"]
+[gd_scene load_steps=4 format=3 uid="uid://bfi2d5h3m6g2p"]
+
+[ext_resource type="Script" uid="uid://dsq4083ojgomo" path="res://scripts/rooms/content_template/marker_component.gd" id="1_7pijt"]
+[ext_resource type="Script" uid="uid://d2fvaykgni5qd" path="res://scripts/data/MarkData.gd" id="2_vr7ru"]
+
+[sub_resource type="Resource" id="Resource_11ral"]
+script = ExtResource("2_vr7ru")
+entity_type = "tree"
+size_limit = Vector2i(-1, -1)
+priority = 1
+probability = 1.0
+selection_mode = 0
+explicit_scene = ""
+pair_seed = -1
+scene_index = -1
+use_exclusive_group = false
+exclusive_group = ""
+subgroup = ""
+group_limit = 10
+metadata/_custom_type_script = "uid://d2fvaykgni5qd"
 
 [node name="Marker2D" type="Marker2D"]
 z_as_relative = false
 gizmo_extents = 32.0
+script = ExtResource("1_7pijt")
+marker_data = SubResource("Resource_11ral")
 metadata/size = Vector2i(1, 1)
 metadata/priority = 0
 metadata/type = "rock"

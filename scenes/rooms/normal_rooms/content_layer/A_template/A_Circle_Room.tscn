@@ -1,12 +1,13 @@
-[gd_scene load_steps=7 format=4 uid="uid://bjhs551ma3alw"]
+[gd_scene load_steps=8 format=4 uid="uid://bjhs551ma3alw"]
 
-[ext_resource type="Texture2D" uid="uid://jyaive704e5w" path="res://assets/grounds/Sprout Lands - Sprites - Basic pack/Tilesets/Hills.png" id="1_d03fe"]
-[ext_resource type="Script" uid="uid://bkqqpy3xgr5tu" path="res://scripts/rooms/content_template/a_template.gd" id="2_d03fe"]
-[ext_resource type="PackedScene" uid="uid://dm7td8w70i2bl" path="res://备份/A类模板底层辅助显示层(用后删除).tscn" id="2_mpxr1"]
-[ext_resource type="PackedScene" uid="uid://cufqe8v166o1p" path="res://scenes/player/Player.tscn" id="3_dqbwb"]
+[ext_resource type="Texture2D" uid="uid://jyaive704e5w" path="res://assets/grounds/Sprout Lands - Sprites - Basic pack/Tilesets/Hills.png" id="1_jnito"]
+[ext_resource type="Script" uid="uid://bkqqpy3xgr5tu" path="res://scripts/rooms/content_template/a_template.gd" id="2_66qa8"]
+[ext_resource type="PackedScene" uid="uid://bfi2d5h3m6g2p" path="res://备份/A_类的Mark2D模板.tscn" id="3_66qa8"]
+[ext_resource type="PackedScene" uid="uid://cufqe8v166o1p" path="res://scenes/player/Player.tscn" id="3_wmuiv"]
+[ext_resource type="PackedScene" uid="uid://dm7td8w70i2bl" path="res://备份/A类模板底层辅助显示层(用后删除).tscn" id="4_thbo6"]
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_41boa"]
-texture = ExtResource("1_d03fe")
+texture = ExtResource("1_jnito")
 0:0/0 = 0
 0:0/0/physics_layer_0/polygon_0/points = PackedVector2Array(-8, 0, -8, 8, 8, 8, 8, 0, 8, -8, 0, -8)
 1:0/0 = 0
@@ -156,125 +157,34 @@ physics_layer_0/collision_mask = 0
 sources/1 = SubResource("TileSetAtlasSource_41boa")
 
 [node name="ACircleRoom" type="TileMapLayer"]
+z_index = -3
 z_as_relative = false
 y_sort_enabled = true
 texture_filter = 1
 tile_map_data = PackedByteArray("AADv//3/AQADAAIAAAD6//T/AQACAAMAAAD5//T/AQABAAMAAAD4//T/AQAEAAAAAAD4//X/AQAHAAMAAAD3//X/AQABAAMAAAD2//X/AQAEAAAAAAD2//b/AQAHAAMAAAD1//b/AQABAAMAAAD0//b/AQAEAAAAAAD0//f/AQAHAAMAAADy//j/AQAEAAAAAADv//z/AQADAAEAAADv//v/AQAEAAAAAADw//v/AQAHAAMAAADw//r/AQAEAAAAAADz//j/AQAHAAMAAADz//f/AQAEAAAAAADy//n/AQAHAAMAAADx//n/AQAEAAAAAADx//r/AQAHAAMAAAAQAP3/AQADAAIAABAQAPz/AQADAAEAABAPAPv/AQAHAAMAABAQAPv/AQAEAAAAABAOAPr/AQAHAAMAABAPAPr/AQAEAAAAABANAPn/AQAHAAMAABAOAPn/AQAEAAAAABAMAPj/AQAHAAMAABANAPj/AQAEAAAAABALAPf/AQAHAAMAABAMAPf/AQAEAAAAABAJAPb/AQAHAAMAABAKAPb/AQABAAMAABALAPb/AQAEAAAAABAHAPX/AQAHAAMAABAIAPX/AQABAAMAABAJAPX/AQAEAAAAABAFAPT/AQACAAMAABAGAPT/AQABAAMAABAHAPT/AQAEAAAAABDv/wIAAQADAAAAAADv/wMAAQADAAEAAADv/wQAAQAEAAMAAADw/wQAAQAHAAAAAADw/wUAAQAEAAMAAADx/wUAAQAHAAAAAADx/wYAAQAEAAMAAADy/wYAAQAHAAAAAADz/wcAAQAHAAAAAADy/wcAAQAEAAMAAADz/wgAAQAEAAMAAAD0/wgAAQAHAAAAAAD0/wkAAQAEAAMAAAD1/wkAAQABAAMAAAD2/wkAAQAHAAAAAAD2/woAAQAEAAMAAAD3/woAAQABAAMAAAD4/woAAQAHAAAAAAD4/wsAAQAEAAMAAAD5/wsAAQABAAMAAAD6/wsAAQACAAMAAAAQAAIAAQADAAAAABAQAAMAAQADAAEAABAQAAQAAQAEAAMAABAPAAQAAQAHAAAAABAPAAUAAQAEAAMAABAOAAUAAQAHAAAAABAOAAYAAQAEAAMAABANAAYAAQAHAAAAABANAAcAAQAEAAMAABAMAAcAAQAHAAAAABAMAAgAAQAEAAMAABALAAgAAQAHAAAAABALAAkAAQAEAAMAABAKAAkAAQABAAMAABAJAAkAAQAHAAAAABAJAAoAAQAEAAMAABAIAAoAAQABAAMAABAHAAoAAQAHAAAAABAHAAsAAQAEAAMAABAGAAsAAQABAAMAABAFAAsAAQACAAMAABD//wMAAQAAAAIAAAAAAAMAAQACAAIAAAD//wIAAQAAAAEAAAAAAAIAAQACAAEAAAD//wEAAQAAAAEAAAAAAAEAAQACAAEAAAAAAAAAAQAFAAEAAAD//wAAAQAGAAEAAAABAAAAAQABAAIAAAD+/wAAAQABAAIAAAD8/wAAAQAAAAIAAAD9/wAAAQABAAIAAAACAAAAAQABAAIAAAADAAAAAQACAAIAAAD8////AQAAAAAAAAD9////AQABAAAAAAACAP//AQABAAAAAAADAP//AQACAAAAAAD+////AQABAAAAAAABAP//AQABAAAAAAAAAP//AQAFAAIAAAD/////AQAGAAIAAAD///z/AQAAAAAAAAD///3/AQAAAAEAAAD///7/AQAAAAEAAAAAAP7/AQACAAEAAAAAAPz/AQACAAAAAAAAAP3/AQACAAEAAAA=")
 tile_set = SubResource("TileSet_5wg0i")
-script = ExtResource("2_d03fe")
+script = ExtResource("2_66qa8")
 
 [node name="EntityLayer" type="Node2D" parent="."]
+z_as_relative = false
 
 [node name="NaturalSpawns" type="Node2D" parent="EntityLayer"]
 z_index = 2
 
-[node name="tree" type="Marker2D" parent="EntityLayer/NaturalSpawns"]
+[node name="Marker2D" type="Marker2D" parent="EntityLayer/NaturalSpawns"]
 z_as_relative = false
-position = Vector2(-144, 0)
 gizmo_extents = 32.0
-metadata/size = Vector2i(4, 4)
-metadata/priority = 1
-metadata/type = "tree"
+metadata/size = Vector2i(1, 1)
+metadata/priority = 0
+metadata/type = "rock"
 metadata/probability = 1.0
 metadata/pair_seed = -1
 metadata/scene_index = -1
 metadata/explicit_scene = ""
-metadata/group_limit = 2
-metadata/subgroup = "1"
-metadata/exclusive_group = "树"
+metadata/group_limit = 0
+metadata/subgroup = ""
 
-[node name="tree2" type="Marker2D" parent="EntityLayer/NaturalSpawns"]
-z_as_relative = false
-position = Vector2(144, 0)
-gizmo_extents = 32.0
-metadata/size = Vector2i(4, 4)
-metadata/priority = 1
-metadata/type = "tree"
-metadata/probability = 1.0
-metadata/pair_seed = -1
-metadata/scene_index = -1
-metadata/explicit_scene = ""
-metadata/group_limit = 2
-metadata/subgroup = "1"
-metadata/exclusive_group = "树"
-
-[node name="tree3" type="Marker2D" parent="EntityLayer/NaturalSpawns"]
-z_as_relative = false
-position = Vector2(0, 160)
-gizmo_extents = 32.0
-metadata/size = Vector2i(4, 4)
-metadata/priority = 1
-metadata/type = "tree"
-metadata/probability = 1.0
-metadata/pair_seed = -1
-metadata/scene_index = -1
-metadata/explicit_scene = ""
-metadata/group_limit = 2
-metadata/subgroup = "2"
-metadata/exclusive_group = "树"
-
-[node name="tree4" type="Marker2D" parent="EntityLayer/NaturalSpawns"]
-z_as_relative = false
-position = Vector2(0, -112)
-gizmo_extents = 32.0
-metadata/size = Vector2i(4, 4)
-metadata/priority = 1
-metadata/type = "tree"
-metadata/probability = 1.0
-metadata/pair_seed = -1
-metadata/scene_index = -1
-metadata/explicit_scene = ""
-metadata/group_limit = 2
-metadata/subgroup = "2"
-metadata/exclusive_group = "树"
-
-[node name="stone" type="Marker2D" parent="EntityLayer/NaturalSpawns"]
-z_as_relative = false
-position = Vector2(-352, 208)
-gizmo_extents = 32.0
-metadata/size = Vector2i(1, 1)
-metadata/priority = 1
-metadata/type = "rock"
-metadata/probability = 0.5
-metadata/pair_seed = -1
-metadata/scene_index = -1
-metadata/explicit_scene = ""
-
-[node name="stone2" type="Marker2D" parent="EntityLayer/NaturalSpawns"]
-z_as_relative = false
-position = Vector2(-256, -144)
-gizmo_extents = 32.0
-metadata/size = Vector2i(1, 1)
-metadata/priority = 1
-metadata/type = "rock"
-metadata/probability = 0.5
-metadata/pair_seed = -1
-metadata/scene_index = -1
-metadata/explicit_scene = ""
-
-[node name="stone3" type="Marker2D" parent="EntityLayer/NaturalSpawns"]
-z_as_relative = false
-position = Vector2(272, 192)
-gizmo_extents = 32.0
-metadata/size = Vector2i(1, 1)
-metadata/priority = 1
-metadata/type = "rock"
-metadata/probability = 0.5
-metadata/pair_seed = -1
-metadata/scene_index = -1
-metadata/explicit_scene = ""
-
-[node name="stone4" type="Marker2D" parent="EntityLayer/NaturalSpawns"]
-z_as_relative = false
-position = Vector2(320, -208)
-gizmo_extents = 32.0
-metadata/size = Vector2i(1, 1)
-metadata/priority = 1
-metadata/type = "rock"
-metadata/probability = 0.5
-metadata/pair_seed = -1
-metadata/scene_index = -1
-metadata/explicit_scene = ""
+[node name="Marker2D" parent="EntityLayer/NaturalSpawns/Marker2D" instance=ExtResource("3_66qa8")]
 
 [node name="DecoSpawns" type="Node2D" parent="EntityLayer"]
 
@@ -282,8 +192,9 @@ metadata/explicit_scene = ""
 
 [node name="Objects" type="Node2D" parent="EntityLayer"]
 
-[node name="Player" parent="EntityLayer/Objects" instance=ExtResource("3_dqbwb")]
+[node name="Player" parent="EntityLayer/Objects" instance=ExtResource("3_wmuiv")]
 position = Vector2(112, 112)
 scale = Vector2(0.25, 0.25)
 
-[node name="A类模板底层辅助显示层(用后删除)" parent="." instance=ExtResource("2_mpxr1")]
+[node name="A类模板底层辅助显示层(用后删除)" parent="." instance=ExtResource("4_thbo6")]
+visible = false

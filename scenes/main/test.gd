@@ -53,18 +53,18 @@ func level_generator()->Dictionary:
 		if room1:
 			add_child(level_node)
 		var  building = load("res://scenes/buildings/Blacksmith.tscn").instantiate()
-		building .position = room1.position
+		building.position = room1.position
 		add_child(building)
 		
 	config = NormalLevelGenerator.level_config.new().config_dic
 	config.GRID_SIZE = 5
-	config.TARGET_ROOMS = 15
+	config.TARGET_ROOMS = 10
 	config.CONNECTION_RATE = 0.2
 	config.ENABLE_PARTITIONS = true
 	config.COMPLEXITY_BIAS = 0.5
 	config.RANDOM_SEED = -1
 	config.DEBUG_MODE = false
-	config.HORIZONTAL_CONNECTION_BIAS=0.6
+	config.HORIZONTAL_CONNECTION_BIAS=0.5
 	return level_data
 
 
