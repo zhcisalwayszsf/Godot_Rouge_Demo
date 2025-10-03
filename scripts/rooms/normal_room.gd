@@ -20,8 +20,8 @@ var cornor:Array = [
 ]
 
 func _init() -> void:
-	tiles_floor = preload("res://scenes/rooms/floor_layers/Spring/spring_room_floor.tscn").instantiate()
-	tiles_wall = preload("res://scenes/rooms/floor_layers/Spring/spring_room_rect_wall.tscn").instantiate()
+	tiles_floor = preload("res://scenes/rooms/normal_rooms/floor_layers//Spring/spring_room_floor.tscn").instantiate()
+	tiles_wall = preload("res://scenes/rooms/normal_rooms/floor_layers//Spring/spring_room_rect_wall.tscn").instantiate()
 
 func instantiate_tile(p_room_info:NormalLevelGenerator.RoomInfo):
 	room_info = p_room_info

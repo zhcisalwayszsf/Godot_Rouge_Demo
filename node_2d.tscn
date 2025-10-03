@@ -1,0 +1,17 @@
+[gd_scene load_steps=4 format=3 uid="uid://di4es468mrs7r"]
+
+[ext_resource type="Script" uid="uid://b50cawrb85bp5" path="res://node_2d.gd" id="1_wtcfe"]
+[ext_resource type="PackedScene" uid="uid://4pln2slf7m1" path="res://scenes/rooms/normal_rooms/content_layer/A_template/spring/A_Rect_Room.tscn" id="2_epypp"]
+[ext_resource type="PackedScene" uid="uid://cufqe8v166o1p" path="res://scenes/player/Player.tscn" id="3_0hol4"]
+
+[node name="Node2D" type="Node2D"]
+z_index = -7
+z_as_relative = false
+y_sort_enabled = true
+script = ExtResource("1_wtcfe")
+
+[node name="ARectRoom" parent="." instance=ExtResource("2_epypp")]
+
+[node name="Player" parent="ARectRoom" instance=ExtResource("3_0hol4")]
+position = Vector2(128, 32)
+scale = Vector2(0.25, 0.25)

@@ -3,19 +3,19 @@ static var entity_pools = {
 	"tree": {
 		"scenes": [
 			{
-				"path": "res://scenes/rooms/normal_rooms/content_layer/spring/Natural_Objects/tree001.tscn",
+				"path": "res://scenes/rooms/normal_rooms/content_layer/A_template/临时/tree002.tscn",
 				"size": Vector2i(1, 1)
 			},
 			{
-				"path": "res://scenes/rooms/normal_rooms/content_layer/spring/Natural_Objects/tree001.tscn",
+				"path": "res://scenes/rooms/normal_rooms/content_layer/A_template/临时/tree002.tscn",
 				"size": Vector2i(2, 2)
 			},
 			{
-				"path": "res://scenes/rooms/normal_rooms/content_layer/spring/Natural_Objects/tree001.tscn",
+				"path": "res://scenes/rooms/normal_rooms/content_layer/A_template/临时/tree002.tscn",
 				"size": Vector2i(3, 3)
 			},
 			{
-				"path": "res://scenes/rooms/normal_rooms/content_layer/spring/Natural_Objects/tree001.tscn",
+				"path": "res://scenes/rooms/normal_rooms/content_layer/A_template/临时/tree002.tscn",
 				"size": Vector2i(4, 4)
 			}
 		],
