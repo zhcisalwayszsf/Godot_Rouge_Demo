@@ -4,7 +4,6 @@
 [ext_resource type="Script" uid="uid://bkqqpy3xgr5tu" path="res://scripts/rooms/content_template/a_template.gd" id="2_trelp"]
 [ext_resource type="Script" uid="uid://dsq4083ojgomo" path="res://scripts/rooms/content_template/marker_component.gd" id="3_bnxx4"]
 [ext_resource type="Script" uid="uid://d2fvaykgni5qd" path="res://scripts/data/MarkData.gd" id="4_ga7lw"]
-[ext_resource type="PackedScene" uid="uid://dm7td8w70i2bl" path="res://备份/A类模板底层辅助显示层(用后删除).tscn" id="5_ga7lw"]
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_41boa"]
 texture = ExtResource("1_asrvj")
@@ -154,7 +153,7 @@ entity_type = "tree"
 size_limit = Vector2i(4, 4)
 priority = 1
 probability = 1.0
-selection_mode = 0
+selection_mode = 2
 explicit_scene = ""
 pair_seed = 1
 scene_index = -1
@@ -170,13 +169,29 @@ entity_type = "tree"
 size_limit = Vector2i(4, 4)
 priority = 1
 probability = 1.0
-selection_mode = 0
+selection_mode = 2
 explicit_scene = ""
-pair_seed = 1
+pair_seed = 2
 scene_index = -1
 use_exclusive_group = true
 exclusive_group = "树"
 subgroup = "2"
+group_limit = 10
+metadata/_custom_type_script = "uid://d2fvaykgni5qd"
+
+[sub_resource type="Resource" id="Resource_trelp"]
+script = ExtResource("4_ga7lw")
+entity_type = "tree"
+size_limit = Vector2i(4, 4)
+priority = 1
+probability = 1.0
+selection_mode = 1
+explicit_scene = "uid://dp7rb5pqydya7"
+pair_seed = -1
+scene_index = -1
+use_exclusive_group = false
+exclusive_group = ""
+subgroup = ""
 group_limit = 10
 metadata/_custom_type_script = "uid://d2fvaykgni5qd"
 
@@ -260,6 +275,21 @@ metadata/explicit_scene = ""
 metadata/group_limit = 0
 metadata/subgroup = ""
 
+[node name="Marker2D5" type="Marker2D" parent="EntityLayer/NaturalSpawns"]
+z_as_relative = false
+gizmo_extents = 32.0
+script = ExtResource("3_bnxx4")
+marker_data = SubResource("Resource_trelp")
+metadata/size = Vector2i(1, 1)
+metadata/priority = 0
+metadata/type = "rock"
+metadata/probability = 1.0
+metadata/pair_seed = -1
+metadata/scene_index = -1
+metadata/explicit_scene = ""
+metadata/group_limit = 0
+metadata/subgroup = ""
+
 [node name="DecoSpawns" type="Node2D" parent="EntityLayer"]
 y_sort_enabled = true
 
@@ -268,5 +298,3 @@ y_sort_enabled = true
 
 [node name="Objects" type="Node2D" parent="EntityLayer"]
 y_sort_enabled = true
-
-[node name="A类模板底层辅助显示层(用后删除)" parent="." instance=ExtResource("5_ga7lw")]

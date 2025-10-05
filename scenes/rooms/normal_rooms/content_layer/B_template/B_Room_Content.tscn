@@ -1,7 +1,16 @@
-[gd_scene format=3 uid="uid://bu1p7af7ld0y2"]
+[gd_scene load_steps=2 format=3 uid="uid://bu1p7af7ld0y2"]
+
+[ext_resource type="Script" uid="uid://b4n6cjlo8htc3" path="res://scripts/rooms/content_template/b_template.gd" id="1_4dvlq"]
 
 [node name="BRoomContent" type="Node2D"]
+z_as_relative = false
+y_sort_enabled = true
+script = ExtResource("1_4dvlq")
 
 [node name="BlockGrid" type="Node2D" parent="."]
+z_as_relative = false
+y_sort_enabled = true
 
 [node name="EntityLayer" type="Node2D" parent="."]
+z_as_relative = false
+y_sort_enabled = true

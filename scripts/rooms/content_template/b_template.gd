@@ -1,590 +1,443 @@
 # b_template.gd
-# B类模板：积木式拼接 + 智能选择算法（改进版）
+# B类模板：积木拼接式内容生成
 extends Node2D
 
-"""
-场景结构:
-BMixedBlocks (Node2D) [此脚本]
-  ├─ BlockGrid (Node2D)          # 3x3网格容器（空，运行时填充）
-  └─ EntityLayer (Node2D)        # 实体容器（运行时填充）
-		├─ Trees (Node2D)
-		├─ Destructibles (Node2D)
-		└─ Props (Node2D)
-"""
+static var DEBUG_MODE = true
 
-# ============== 配置参数 ==============
-@export var DEBUG_MODE: bool = false
-@export var grid_size: Vector2i = Vector2i(3, 3)  # 可配置的网格大小
-@export var block_size: Vector2i = Vector2i(552, 341)  # 每个格子的尺寸
-
-# 子分块配置（扩展版）
-var block_types = {
-	"empty": {
-		"scene": null,
-		"weight": 30,
-		"size": "any",
-		"conflicts": [],
-		"synergy": {},
-		"themes": ["peaceful", "ruins", "dark", "mystical"],
-		"min_floor": 1,
-		"max_floor": 99
-	},
-	"house": {
-		"scene": "res://scenes/content_blocks/house_block.tscn",
-		"weight": 15,
-		"size": "large",
-		"conflicts": ["barn", "altar", "portal"],
-		"synergy": {"garden": 2.0, "well": 1.5, "fence": 1.3},
-		"themes": ["peaceful"],
-		"min_floor": 1,
-		"max_floor": 5
-	},
-	"barn": {
-		"scene": "res://scenes/content_blocks/barn_block.tscn",
-		"weight": 12,
-		"size": "large",
-		"conflicts": ["house", "ruins"],
-		"synergy": {"garden": 1.8, "fence": 2.0, "scarecrow": 1.5},
-		"themes": ["peaceful"],
-		"min_floor": 1,
-		"max_floor": 5
-	},
-	"garden": {
-		"scene": "res://scenes/content_blocks/garden_block.tscn",
-		"weight": 20,
-		"size": "medium",
-		"conflicts": ["ruins", "bones", "corruption"],
-		"synergy": {"house": 1.5, "well": 1.3, "fountain": 1.8},
-		"themes": ["peaceful"],
-		"min_floor": 1,
-		"max_floor": 6
-	},
-	"well": {
-		"scene": "res://scenes/content_blocks/well_block.tscn",
-		"weight": 10,
-		"size": "small",
-		"conflicts": ["void"],
-		"synergy": {"house": 1.5, "garden": 1.3},
-		"themes": ["peaceful"],
-		"min_floor": 1,
-		"max_floor": 99
-	},
-	"forest": {
-		"scene": "res://scenes/content_blocks/forest_block.tscn",
-		"weight": 20,
-		"size": "medium",
-		"conflicts": ["house", "barn"],
-		"synergy": {"pond": 1.8, "ruins": 1.2, "mushrooms": 2.0},
-		"themes": ["peaceful", "ruins", "mystical"],
-		"min_floor": 1,
-		"max_floor": 99
-	},
-	"pond": {
-		"scene": "res://scenes/content_blocks/pond_block.tscn",
-		"weight": 8,
-		"size": "small",
-		"conflicts": ["altar", "lava"],
-		"synergy": {"forest": 1.8, "lilypads": 1.5},
-		"themes": ["peaceful"],
-		"min_floor": 1,
-		"max_floor": 99
-	},
-	"ruins": {
-		"scene": "res://scenes/content_blocks/ruins_block.tscn",
-		"weight": 15,
-		"size": "large",
-		"conflicts": ["house", "barn", "garden"],
-		"synergy": {"altar": 2.5, "bones": 1.8, "ancient_tree": 2.0},
-		"themes": ["ruins", "dark"],
-		"min_floor": 3,
-		"max_floor": 99
-	},
-	"altar": {
-		"scene": "res://scenes/content_blocks/altar_block.tscn",
-		"weight": 10,
-		"size": "medium",
-		"conflicts": ["house", "pond", "garden"],
-		"synergy": {"ruins": 2.5, "candles": 2.0, "ritual_circle": 3.0},
-		"themes": ["dark", "mystical"],
-		"min_floor": 5,
-		"max_floor": 99
-	},
-	"bones": {
-		"scene": "res://scenes/content_blocks/bones_block.tscn",
-		"weight": 12,
-		"size": "small",
-		"conflicts": ["garden", "well"],
-		"synergy": {"ruins": 1.8, "altar": 1.5, "graveyard": 2.5},
-		"themes": ["dark"],
-		"min_floor": 4,
-		"max_floor": 99
-	},
-	"mushrooms": {
-		"scene": "res://scenes/content_blocks/mushrooms_block.tscn",
-		"weight": 15,
-		"size": "small",
-		"conflicts": [],
-		"synergy": {"forest": 2.0, "cave": 1.5},
-		"themes": ["mystical"],
-		"min_floor": 2,
-		"max_floor": 99
-	},
-	"crystal": {
-		"scene": "res://scenes/content_blocks/crystal_block.tscn",
-		"weight": 8,
-		"size": "medium",
-		"conflicts": [],
-		"synergy": {"cave": 2.0, "portal": 2.5},
-		"themes": ["mystical"],
-		"min_floor": 7,
-		"max_floor": 99
-	},
-	"portal": {
-		"scene": "res://scenes/content_blocks/portal_block.tscn",
-		"weight": 5,
-		"size": "large",
-		"conflicts": ["house", "barn"],
-		"synergy": {"crystal": 2.5, "altar": 2.0},
-		"themes": ["mystical", "dark"],
-		"min_floor": 10,
-		"max_floor": 99
-	}
+# 主题枚举
+enum Room_Theme {
+	TEST,
+	SPRING,   # 春原
+	DESERT,   # 沙漠
+	FOREST,   # 雨林
+	DUNGEON,  # 地牢
+	COAST     # 海岸
 }
 
-# 网格规则：定义每个格子允许的类型（可根据grid_size动态调整）
-var grid_rules = {}
+# 网格配置
+const GRID_SIZE = 3  # 3x3 网格
+const CELL_SIZE = Vector2(554, 341)  # 每个网格单元的尺寸（根据房间大小1664x1024调整）
 
-# 主题配置（扩展版）
-var theme_configs = {
-	"peaceful": {
-		"preferred_types": ["house", "barn", "garden", "well", "forest", "pond"],
-		"density": 0.6,  # 60%填充率
-		"description": "宁静祥和的田园风光"
-	},
-	"ruins": {
-		"preferred_types": ["ruins", "forest", "bones", "altar"],
-		"density": 0.5,
-		"description": "古老遗迹与自然融合"
-	},
-	"dark": {
-		"preferred_types": ["altar", "bones", "ruins", "portal"],
-		"density": 0.4,
-		"description": "黑暗邪恶的氛围"
-	},
-	"mystical": {
-		"preferred_types": ["crystal", "mushrooms", "portal", "altar", "forest"],
-		"density": 0.45,
-		"description": "神秘魔法的环境"
-	}
-}
+# 导出参数
+@export var current_theme: Room_Theme = Room_Theme.SPRING
+@export var floor_level: int = 1
+@export var room_type = null  # 从LevelManager传入的房间类型
 
-# ============== 状态变量 ==============
+# 运行时变量
 var rng: RandomNumberGenerator
-var block_grid: Node2D
 var entity_layer: Node2D
-var used_types: Array = []
-var grid_layout: Dictionary = {}
-var current_theme: String = "peaceful"
-var current_floor_level: int = 1
-var current_room_type = null
+var block_config: Dictionary = {}
+var decoration_config: Dictionary = {}
+var selected_blocks: Array = []  # 当前生成中选中的块
+var grid_positions: Array = []  # 3x3网格位置
 
-# 实体池配置（兼容A类模板格式）
-var entity_pools: Dictionary = {}
-
-func _ready():
+func _ready() -> void:
 	rng = RandomNumberGenerator.new()
 	rng.randomize()
-	_initialize_grid_rules()
+	
+	# 初始化网格位置
+	_initialize_grid_positions()
+	
+	 #如果在编辑器中测试，自动生成
+	populate(1, null)
+	#if Engine.is_editor_hint():
+		#populate(1, null)
 
-func populate(floor_level: int = 1, room_type = null):
-	"""主生成方法"""
-	_log_debug("=== B类模板开始生成 ===")
-	_log_debug("楼层: %d, 房间类型: %s" % [floor_level, room_type])
+func populate(level: int = 1, room_type_param = null):
+	"""主生成方法 - 被LevelManager调用"""
+	print("###########################")
+	floor_level = level
+	room_type = room_type_param
 	
-	current_floor_level = floor_level
-	current_room_type = room_type
+	if DEBUG_MODE:
+		print("[B类模板] 开始生成内容 - 主题: %s, 楼层: %d" % [_theme_to_string(), floor_level])
 	
-	# 获取容器
-	block_grid = get_node_or_null("BlockGrid")
+	# 获取EntityLayer
 	entity_layer = get_node_or_null("EntityLayer")
-	
-	if not block_grid:
-		block_grid = Node2D.new()
-		block_grid.name = "BlockGrid"
-		add_child(block_grid)
-	
 	if not entity_layer:
-		entity_layer = Node2D.new()
-		entity_layer.name = "EntityLayer"
-		add_child(entity_layer)
+		push_error("B类模板缺少EntityLayer节点")
+		return
 	
-	# 加载实体池配置
-	_load_entity_pools()
+	# 加载配置
+	if not _load_configurations():
+		return
 	
-	# 选择主题
-	_select_theme(floor_level, room_type)
+	# 清空现有内容
+	_clear_entity_layer()
 	
-	# 计算密度
-	var density = _calculate_density(floor_level)
+	# 选择块组合
+	selected_blocks = _select_block_combination()
 	
-	# 生成网格布局
-	_generate_grid(density)
+	if selected_blocks.is_empty():
+		push_warning("未能选择任何块")
+		return
 	
-	# 从子分块收集SpawnMarkers并生成实体
-	_populate_entities_from_blocks()
+	# 在网格中实例化块
+	_instantiate_blocks_in_grid()
 	
-	# 直接在空格子生成装饰
-	_populate_empty_cells()
-	
-	# 清理Markers
-	_cleanup_markers()
-	
-	_log_debug("=== B类模板生成完成 ===")
-	_print_generation_summary()
+	if DEBUG_MODE:
+		print("[B类模板] 内容生成完成 - 共 %d 个块" % selected_blocks.size())
 
-func _initialize_grid_rules():
-	"""初始化网格规则（支持动态网格大小）"""
-	grid_rules.clear()
+func _initialize_grid_positions():
+	"""初始化3x3网格的中心位置"""
+	grid_positions.clear()
 	
-	# 中心位置优先小型元素
-	var center = Vector2i(grid_size.x / 2, grid_size.y / 2)
-	grid_rules[center] = ["empty", "pond", "altar", "well", "crystal"]
+	# 计算起始偏移（使网格居中）
+	var start_offset = Vector2(
+		-(GRID_SIZE - 1) * CELL_SIZE.x / 2,
+		-(GRID_SIZE - 1) * CELL_SIZE.y / 2
+	)
 	
-	# 四角优先大型元素
-	grid_rules[Vector2i(0, 0)] = ["house", "forest", "ruins", "barn", "portal"]
-	grid_rules[Vector2i(grid_size.x - 1, 0)] = ["house", "forest", "ruins", "barn", "portal"]
-	grid_rules[Vector2i(0, grid_size.y - 1)] = ["house", "forest", "ruins", "barn", "portal"]
-	grid_rules[Vector2i(grid_size.x - 1, grid_size.y - 1)] = ["house", "forest", "ruins", "barn", "portal"]
+	for y in range(GRID_SIZE):
+		for x in range(GRID_SIZE):
+			var pos = start_offset + Vector2(
+				x * CELL_SIZE.x,
+				y * CELL_SIZE.y
+			)
+			grid_positions.append({
+				"position": pos,
+				"grid_x": x,
+				"grid_y": y,
+				"occupied": false
+			})
 
-func _load_entity_pools():
-	"""加载实体池配置（根据主题）"""
-	# 这里可以根据主题加载不同的配置
-	# 暂时使用硬编码的示例
-	entity_pools = {
-		"tree": {
-			"scenes": [
-				{"path": "res://scenes/entities/nature/oak_tree.tscn", "size": Vector2i(2, 2)},
-				{"path": "res://scenes/entities/nature/pine_tree.tscn", "size": Vector2i(2, 2)}
-			],
-			"max_count": 8,
-			"container": "Trees"
-		},
-		"rock": {
-			"scenes": [
-				{"path": "res://scenes/entities/nature/rock_small.tscn", "size": Vector2i(1, 1)},
-				{"path": "res://scenes/entities/nature/rock_large.tscn", "size": Vector2i(2, 2)}
-			],
-			"max_count": 5,
-			"container": "Trees"
-		},
-		"barrel": {
-			"scenes": [
-				{"path": "res://scenes/entities/props/barrel.tscn", "size": Vector2i(1, 1)}
-			],
-			"max_count": 3,
-			"container": "Destructibles"
-		},
-		"flower": {
-			"scenes": [
-				{"path": "res://scenes/entities/nature/flower_red.tscn", "size": Vector2i(1, 1)},
-				{"path": "res://scenes/entities/nature/flower_blue.tscn", "size": Vector2i(1, 1)}
-			],
-			"max_count": 10,
-			"container": "Props"
-		}
-	}
+func _load_configurations() -> bool:
+	"""加载块配置和装饰物配置"""
+	var block_path = _get_block_config_path()
+	var decoration_path = _get_decoration_config_path()
+	
+	# 加载块配置
+	var block_script = load(block_path)
+	if not block_script:
+		push_error("无法加载块配置: %s" % block_path)
+		return false
+	
+	block_config = block_script.block_pools
+	
+	# 加载装饰物配置
+	var decoration_script = load(decoration_path)
+	if not decoration_script:
+		push_error("无法加载装饰物配置: %s" % decoration_path)
+		return false
+	
+	decoration_config = decoration_script.decoration_pools
+	
+	if DEBUG_MODE:
+		print("  [配置加载] 块类型: %d, 装饰物类型: %d" % [
+			block_config.keys().size(),
+			decoration_config.keys().size()
+		])
+	
+	return true
 
-func _select_theme(floor_level: int, room_type):
-	"""智能主题选择"""
-	# 根据楼层和房间类型选择主题
-	if room_type == LevelManager.RoomType.REST:
-		current_theme = "peaceful"
-	elif room_type == LevelManager.RoomType.BOSS and floor_level >= 10:
-		current_theme = "dark"
-	elif floor_level <= 3:
-		current_theme = "peaceful"
-	elif floor_level <= 6:
-		current_theme = "ruins"
-	elif floor_level <= 9:
-		current_theme = "mystical"
-	else:
-		current_theme = "dark"
-	
-	_log_debug("选择主题: %s (%s)" % [current_theme, theme_configs[current_theme].description])
+func _get_block_config_path() -> String:
+	"""获取块配置文件路径"""
+	match current_theme:
+		Room_Theme.TEST:
+			return "res://scripts/rooms/objectslist/B/Test_Block_List.gd"
+		Room_Theme.SPRING:
+			return "res://scripts/rooms/objectslist/B/Test_Block_List.gd"
+		Room_Theme.DESERT:
+			return "res://scripts/rooms/objectslist/B/Test_Block_List.gd"
+		Room_Theme.FOREST:
+			return "res://scripts/rooms/objectslist/B/Test_Block_List.gd"
+		Room_Theme.DUNGEON:
+			return "res://scripts/rooms/objectslist/B/Test_Block_List.gd"
+		Room_Theme.COAST:
+			return "res://scripts/rooms/objectslist/B/Test_Block_List.gd"
+		_:
+			return "res://scripts/rooms/objectslist/B/Test_Block_List.gd"
 
-func _calculate_density(floor_level: int) -> float:
-	"""计算密度（基于主题和楼层）"""
-	var base_density = theme_configs[current_theme].density
-	
-	# 楼层越高，密度略微降低（增加挑战空间）
-	var floor_modifier = 1.0 - (floor_level * 0.02)
-	floor_modifier = max(0.3, floor_modifier)
-	
-	return base_density * floor_modifier
+func _get_decoration_config_path() -> String:
+	"""获取装饰物配置文件路径"""
+	match current_theme:
+		Room_Theme.TEST:
+			return "res://scripts/rooms/objectslist/B/decoration/test_decoration.gd"
+		Room_Theme.SPRING:
+			return "res://scripts/rooms/objectslist/B/decoration/spring_decoration.gd"
+		Room_Theme.DESERT:
+			return "res://scripts/rooms/objectslist/B/decoration/desert_decoration.gd"
+		Room_Theme.FOREST:
+			return "res://scripts/rooms/objectslist/B/decoration/forest_decoration.gd"
+		Room_Theme.DUNGEON:
+			return "res://scripts/rooms/objectslist/B/decoration/dungeon_decoration.gd"
+		Room_Theme.COAST:
+			return "res://scripts/rooms/objectslist/B/decoration/coast_decoration.gd"
+		_:
+			return "res://scripts/rooms/objectslist/B/decoration/spring_decoration.gd"
 
-func _generate_grid(density: float):
-	"""生成网格布局（改进版）"""
-	used_types.clear()
-	grid_layout.clear()
+func _select_block_combination() -> Array:
+	"""选择块组合（考虑互斥和协同关系）"""
+	var selected = []
+	var available_blocks = block_config.keys()
 	
-	# 收集可用的块类型
-	var available_types = _get_available_block_types()
+	# 第一步：处理互斥规则，过滤出候选块
+	var candidates = _apply_exclusion_rules(available_blocks)
 	
-	_log_debug("可用块类型: %s" % str(available_types))
+	if candidates.is_empty():
+		push_warning("所有块都被互斥规则过滤，使用备用方案")
+		candidates = available_blocks.duplicate()
 	
-	# 遍历网格
-	for x in range(grid_size.x):
-		for y in range(grid_size.y):
-			var grid_pos = Vector2i(x, y)
-			var block_type = _select_block_for_position(grid_pos, density, available_types)
-			
-			grid_layout[grid_pos] = block_type
-			
-			if block_type != "empty":
-				_instantiate_block(block_type, grid_pos)
-				used_types.append(block_type)
+	if DEBUG_MODE:
+		print("  [块选择] 候选块: %s" % candidates)
+	
+	# 第二步：根据协同关系选择块
+	selected = _select_blocks_with_synergy(candidates)
+	
+	return selected
 
-func _get_available_block_types() -> Array:
-	"""获取当前楼层和主题可用的块类型"""
-	var available = []
-	var theme_preferred = theme_configs[current_theme].preferred_types
+
+
+func _apply_exclusion_rules(all_blocks: Array) -> Array:
+	"""应用互斥规则，返回符合条件的候选块列表"""
+	var candidates = []
+	var excluded_blocks = {}  # 记录被排除的块
 	
-	for type_name in block_types.keys():
-		var type_data = block_types[type_name]
+	# 收集所有块的互斥规则
+	var exclusion_map = {}  # block_name -> [excluded_block_names]
+	
+	for block_name in all_blocks:
+		var block_data = block_config[block_name]
+		var excludes = block_data.get("excludes", [])
 		
-		# 检查楼层范围
-		if current_floor_level < type_data.min_floor or current_floor_level > type_data.max_floor:
-			continue
-		
-		# 检查主题匹配
-		if current_theme in type_data.themes or type_name in theme_preferred:
-			available.append(type_name)
+		if not excludes.is_empty():
+			exclusion_map[block_name] = excludes
 	
-	return available
-
-func _select_block_for_position(grid_pos: Vector2i, density: float, available_types: Array) -> String:
-	"""智能块选择算法（改进版）"""
-	# 1. 获取位置允许的类型
-	var allowed_types = grid_rules.get(grid_pos, available_types)
+	# 如果没有互斥规则，返回全部
+	if exclusion_map.is_empty():
+		return all_blocks.duplicate()
 	
-	# 2. 过滤可用类型
-	var valid_types = []
-	for type in allowed_types:
-		if type in available_types:
-			valid_types.append(type)
+	# 按权重排序所有块
+	var sorted_blocks = all_blocks.duplicate()
+	sorted_blocks.sort_custom(func(a, b):
+		var weight_a = block_config[a].get("spawn_weight", 1.0)
+		var weight_b = block_config[b].get("spawn_weight", 1.0)
+		return weight_a > weight_b
+	)
 	
-	if valid_types.is_empty():
-		return "empty"
-	
-	# 3. 计算权重
-	var weighted_types = []
-	
-	for type in valid_types:
-		var weight = block_types[type].weight
-		
-		# 硬互斥检查
-		var conflicts = block_types[type].conflicts
+	# 贪心算法：按权重顺序尝试添加块
+	for block_name in sorted_blocks:
+		# 检查该块是否与已选块冲突
 		var has_conflict = false
-		for conflict in conflicts:
-			if conflict in used_types:
+		
+		for selected_block in candidates:
+			# 检查双向互斥
+			if _blocks_are_exclusive(block_name, selected_block, exclusion_map):
 				has_conflict = true
 				break
 		
-		if has_conflict:
+		if not has_conflict:
+			candidates.append(block_name)
+			
+			if DEBUG_MODE:
+				print("    [互斥检查] %s 加入候选" % block_name)
+		else:
+			if DEBUG_MODE:
+				print("    [互斥检查] %s 被排除" % block_name)
+	
+	return candidates
+
+func _blocks_are_exclusive(block_a: String, block_b: String, exclusion_map: Dictionary) -> bool:
+	"""检查两个块之间是否互斥"""
+	# 检查 A 是否排除 B
+	if block_a in exclusion_map:
+		if block_b in exclusion_map[block_a]:
+			return true
+	
+	# 检查 B 是否排除 A
+	if block_b in exclusion_map:
+		if block_a in exclusion_map[block_b]:
+			return true
+	
+	return false
+
+func _select_blocks_with_synergy(group_blocks: Array) -> Array:
+	"""根据协同关系选择块"""
+	var selected = []
+	var max_blocks = min(GRID_SIZE * GRID_SIZE, group_blocks.size())
+	
+	# 第一步：选择核心块（权重最高的）
+	var sorted_blocks = group_blocks.duplicate()
+	sorted_blocks.sort_custom(func(a, b):
+		return block_config[a].get("spawn_weight", 1.0) > block_config[b].get("spawn_weight", 1.0)
+	)
+	
+	var core_block = sorted_blocks[0]
+	selected.append(core_block)
+	
+	if DEBUG_MODE:
+		print("  [协同选择] 核心块: %s" % core_block)
+	
+	# 第二步：根据协同系数选择其他块
+	var core_data = block_config[core_block]
+	var synergy_map = core_data.get("synergy_with", {})
+	
+	for i in range(max_blocks - 1):
+		var next_block = _select_next_synergy_block(sorted_blocks, selected, synergy_map)
+		if next_block:
+			selected.append(next_block)
+	
+	return selected
+
+func _select_next_synergy_block(available: Array, selected: Array, synergy_map: Dictionary) -> String:
+	"""选择下一个协同块"""
+	var candidates = []
+	
+	for block_name in available:
+		if block_name in selected:
 			continue
 		
-		# 软互斥：已使用类型降权
-		if type in used_types and type != "empty":
-			weight *= 0.3
+		var base_weight = block_config[block_name].get("spawn_weight", 1.0)
+		var synergy_bonus = synergy_map.get(block_name, 1.0)
+		var final_weight = base_weight * synergy_bonus
 		
-		# 增益系统：检查相邻格子
-		var synergy_bonus = _calculate_synergy_bonus(type, grid_pos)
-		weight *= synergy_bonus
-		
-		# 主题偏好加权
-		if type in theme_configs[current_theme].preferred_types:
-			weight *= 1.5
-		
-		# 密度控制
-		if type == "empty":
-			weight *= (1.0 + (1.0 - density) * 3)
-		
-		weighted_types.append({"type": type, "weight": weight})
+		candidates.append({"name": block_name, "weight": final_weight})
 	
-	# 4. 加权随机选择
-	return _weighted_random_choice(weighted_types)
+	if candidates.is_empty():
+		return ""
+	
+	# 加权随机选择
+	var names = candidates.map(func(c): return c.name)
+	var weights = candidates.map(func(c): return c.weight)
+	
+	return _weighted_random_choice(names, weights)
 
-func _calculate_synergy_bonus(type: String, grid_pos: Vector2i) -> float:
-	"""计算协同加成"""
-	var bonus = 1.0
-	var synergy = block_types[type].synergy
+func _random_select_blocks(available: Array, count: int) -> Array:
+	"""随机选择块（无协同关系）"""
+	var selected = []
+	var pool = available.duplicate()
+	pool.shuffle()
 	
-	# 检查所有相邻位置
-	var offsets = [
-		Vector2i(-1, 0), Vector2i(1, 0),
-		Vector2i(0, -1), Vector2i(0, 1),
-		Vector2i(-1, -1), Vector2i(1, -1),
-		Vector2i(-1, 1), Vector2i(1, 1)
-	]
+	for i in range(min(count, pool.size())):
+		selected.append(pool[i])
 	
-	for offset in offsets:
-		var neighbor_pos = grid_pos + offset
-		if neighbor_pos in grid_layout:
-			var neighbor_type = grid_layout[neighbor_pos]
-			if neighbor_type in synergy:
-				bonus *= synergy[neighbor_type]
-	
-	return bonus
+	return selected
 
-func _instantiate_block(block_type: String, grid_pos: Vector2i):
-	"""实例化子分块到网格"""
-	var scene_path = block_types[block_type].scene
-	if not scene_path:
+func _instantiate_blocks_in_grid():
+	"""在网格中实例化选中的块"""
+	# 打乱网格位置
+	var available_positions = grid_positions.duplicate()
+	available_positions.shuffle()
+	
+	for i in range(min(selected_blocks.size(), available_positions.size())):
+		var block_name = selected_blocks[i]
+		var grid_cell = available_positions[i]
+		
+		_instantiate_single_block(block_name, grid_cell)
+
+func _instantiate_single_block(block_name: String, grid_cell: Dictionary):
+	"""实例化单个块及其装饰物"""
+	if block_name not in block_config:
 		return
 	
+	var block_data = block_config[block_name]
+	var block_scenes = block_data.get("scenes", [])
+	
+	if block_scenes.is_empty():
+		return
+	
+	# 根据概率选择场景
+	var scene_path = _select_scene_by_probability(block_scenes)
+	
+	if scene_path.is_empty():
+		return
+	
+	# 加载并实例化块
 	var block_scene = load(scene_path)
 	if not block_scene:
-		push_warning("无法加载分块: %s" % scene_path)
+		push_warning("无法加载块场景: %s" % scene_path)
 		return
 	
 	var block_instance = block_scene.instantiate()
 	
-	# 计算位置
-	var offset = Vector2(-block_size.x, -block_size.y)
-	block_instance.position = offset + Vector2(grid_pos.x * block_size.x, grid_pos.y * block_size.y)
+	# 创建或获取块容器
+	var container = _get_or_create_container(block_data.get("container", "Blocks"))
 	
-	block_grid.add_child(block_instance)
+	# 在网格单元内随机偏移
+	var random_offset = _get_random_offset_in_cell()
+	block_instance.position = grid_cell.position + random_offset
 	
-	_log_debug("生成块 [%d,%d]: %s" % [grid_pos.x, grid_pos.y, block_type])
+	container.add_child(block_instance)
+	
+	if DEBUG_MODE:
+		print("  [实例化] 块: %s 位置: (%d,%d)" % [
+			block_name,
+			grid_cell.grid_x,
+			grid_cell.grid_y
+		])
+	
+	# 标记网格为已占用
+	grid_cell.occupied = true
+	
+	# 添加装饰物
+	_add_decorations_for_block(block_name, grid_cell)
 
-func _populate_entities_from_blocks():
-	"""从子分块的Markers生成实体"""
-	var all_markers = []
-	_collect_markers_recursive(block_grid, all_markers)
+func _select_scene_by_probability(scenes: Array) -> String:
+	"""根据概率选择场景"""
+	if scenes.is_empty():
+		return ""
 	
-	_log_debug("从块中找到 %d 个Marker" % all_markers.size())
+	# 如果场景数据包含概率信息
+	var has_probability = scenes[0] is Dictionary and "probability" in scenes[0]
 	
-	# 按优先级排序（如果Marker有priority元数据）
-	all_markers.sort_custom(func(a, b):
-		var priority_a = a.get_meta("priority", 999)
-		var priority_b = b.get_meta("priority", 999)
-		return priority_a < priority_b
-	)
+	if not has_probability:
+		# 简单随机选择
+		return scenes[rng.randi() % scenes.size()] if scenes[0] is String else scenes[rng.randi() % scenes.size()].path
 	
-	# 生成实体
-	var spawn_counts = {}
-	for marker in all_markers:
-		_spawn_from_marker(marker, spawn_counts)
+	# 加权随机选择
+	var paths = []
+	var weights = []
+	
+	for scene_data in scenes:
+		paths.append(scene_data.path)
+		weights.append(scene_data.get("probability", 1.0))
+	
+	return _weighted_random_choice(paths, weights)
 
-func _populate_empty_cells():
-	"""在空格子直接生成装饰"""
-	for grid_pos in grid_layout:
-		if grid_layout[grid_pos] == "empty":
-			_populate_empty_cell(grid_pos)
-
-func _populate_empty_cell(grid_pos: Vector2i):
-	"""为空格子生成随机装饰"""
-	# 根据主题选择装饰类型
-	var decoration_types = []
-	
-	match current_theme:
-		"peaceful":
-			decoration_types = ["flower", "tree", "rock"]
-		"ruins":
-			decoration_types = ["rock", "tree"]
-		"dark":
-			decoration_types = ["rock"]
-		"mystical":
-			decoration_types = ["flower", "rock"]
-	
-	# 随机决定是否生成（30%概率）
-	if rng.randf() > 0.3:
+func _add_decorations_for_block(block_name: String, grid_cell: Dictionary):
+	"""为块添加装饰物"""
+	if block_name not in decoration_config:
 		return
 	
-	# 选择类型并生成
-	if not decoration_types.is_empty():
-		var chosen_type = decoration_types[rng.randi() % decoration_types.size()]
+	var decoration_data = decoration_config[block_name]
+	var decoration_list = decoration_data.get("items", [])
+	var max_decorations = decoration_data.get("max_count", 3)
+	
+	if decoration_list.is_empty():
+		return
+	
+	# 随机选择装饰物数量
+	var decoration_count = rng.randi_range(0, max_decorations)
+	
+	for i in range(decoration_count):
+		var decoration_scene_path = _select_scene_by_probability(decoration_list)
 		
-		if chosen_type in entity_pools:
-			var scenes = entity_pools[chosen_type].scenes
-			if not scenes.is_empty():
-				var scene_data = scenes[rng.randi() % scenes.size()]
-				var entity_scene = load(scene_data.path)
-				
-				if entity_scene:
-					var entity_instance = entity_scene.instantiate()
-					
-					# 计算世界坐标
-					var world_pos = Vector2(grid_pos.x * block_size.x, grid_pos.y * block_size.y)
-					# 添加随机偏移
-					world_pos += Vector2(
-						rng.randf_range(-block_size.x * 0.3, block_size.x * 0.3),
-						rng.randf_range(-block_size.y * 0.3, block_size.y * 0.3)
-					)
-					
-					entity_instance.position = world_pos
-					
-					# 添加到容器
-					var container_name = entity_pools[chosen_type].get("container", "Props")
-					var container = entity_layer.get_node_or_null(container_name)
-					
-					if not container:
-						container = Node2D.new()
-						container.name = container_name
-						entity_layer.add_child(container)
-					
-					container.add_child(entity_instance)
+		if decoration_scene_path.is_empty():
+			continue
+		
+		var decoration_scene = load(decoration_scene_path)
+		if not decoration_scene:
+			continue
+		
+		var decoration_instance = decoration_scene.instantiate()
+		
+		# 在网格单元内随机位置
+		var random_offset = _get_random_offset_in_cell()
+		decoration_instance.position = grid_cell.position + random_offset
+		
+		var container = _get_or_create_container("Decorations")
+		container.add_child(decoration_instance)
 
-func _collect_markers_recursive(node: Node, markers: Array):
-	"""递归收集Markers"""
-	if node.name == "SpawnMarkers":
-		for child in node.get_children():
-			if child is Marker2D:
-				markers.append(child)
-	
-	for child in node.get_children():
-		_collect_markers_recursive(child, markers)
+func _get_random_offset_in_cell() -> Vector2:
+	"""在网格单元内获取随机偏移"""
+	var margin = 50  # 边缘留白
+	return Vector2(
+		rng.randf_range(-CELL_SIZE.x / 2 + margin, CELL_SIZE.x / 2 - margin),
+		rng.randf_range(-CELL_SIZE.y / 2 + margin, CELL_SIZE.y / 2 - margin)
+	)
 
-func _spawn_from_marker(marker: Marker2D, spawn_counts: Dictionary):
-	"""从Marker生成实体（兼容metadata和MarkerData）"""
-	var entity_type = ""
-	var probability = 1.0
-	
-	# 尝试获取type（兼容旧版metadata）
-	if marker.has_meta("type"):
-		entity_type = marker.get_meta("type", "")
-	
-	# 尝试获取MarkerData（新版Resource系统）
-	if marker.has_method("get_config"):
-		var config = marker.get_config()
-		if config:
-			entity_type = config.entity_type
-			probability = config.probability
-	
-	if entity_type.is_empty() or rng.randf() > probability:
-		return
-	
-	# 检查类型限制
-	var current_count = spawn_counts.get(entity_type, 0)
-	if entity_type in entity_pools:
-		var max_count = entity_pools[entity_type].get("max_count", 999)
-		if current_count >= max_count:
-			return
-	
-	# 获取场景
-	var scene_path = _get_scene_for_type(entity_type)
-	if scene_path.is_empty():
-		return
-	
-	var entity_scene = load(scene_path)
-	if not entity_scene:
-		return
-	
-	var entity_instance = entity_scene.instantiate()
-	entity_instance.global_position = marker.global_position
-	
-	# 放入容器
-	var container_name = _get_container_for_type(entity_type)
+func _get_or_create_container(container_name: String) -> Node2D:
+	"""获取或创建容器节点"""
 	var container = entity_layer.get_node_or_null(container_name)
 	
 	if not container:
@@ -592,95 +445,40 @@ func _spawn_from_marker(marker: Marker2D, spawn_counts: Dictionary):
 		container.name = container_name
 		entity_layer.add_child(container)
 	
-	container.add_child(entity_instance)
-	
-	# 更新计数
-	spawn_counts[entity_type] = current_count + 1
+	return container
 
-func _get_scene_for_type(entity_type: String) -> String:
-	"""获取类型对应的场景路径"""
-	if entity_type not in entity_pools:
-		return ""
-	
-	var scenes = entity_pools[entity_type].scenes
-	if scenes.is_empty():
-		return ""
-	
-	# 随机选择
-	var scene_data = scenes[rng.randi() % scenes.size()]
-	return scene_data.path
+func _clear_entity_layer():
+	"""清空EntityLayer的所有子节点"""
+	for child in entity_layer.get_children():
+		child.queue_free()
 
-func _cleanup_markers():
-	"""清理所有SpawnMarkers节点"""
-	_cleanup_markers_recursive(block_grid)
-
-func _cleanup_markers_recursive(node: Node):
-	"""递归清理Markers"""
-	if node.name == "SpawnMarkers":
-		node.queue_free()
-		return
-	
-	for child in node.get_children():
-		_cleanup_markers_recursive(child)
-
-# ============== 辅助函数 ==============
-
-func _weighted_random_choice(weighted_types: Array) -> String:
+func _weighted_random_choice(items: Array, weights: Array):
 	"""加权随机选择"""
-	if weighted_types.is_empty():
-		return "empty"
+	if items.is_empty() or weights.is_empty():
+		return null
 	
 	var total_weight = 0.0
-	for item in weighted_types:
-		total_weight += item.weight
+	for weight in weights:
+		total_weight += weight
 	
-	if total_weight == 0:
-		return "empty"
+	if total_weight <= 0:
+		return items[rng.randi() % items.size()]
 	
 	var random_value = rng.randf() * total_weight
 	var cumulative = 0.0
 	
-	for item in weighted_types:
-		cumulative += item.weight
+	for i in range(items.size()):
+		cumulative += weights[i]
 		if random_value <= cumulative:
-			return item.type
+			return items[i]
 	
-	return weighted_types[0].type
+	return items[-1]
 
-func _get_container_for_type(entity_type: String) -> String:
-	"""根据类型获取容器名称"""
-	if entity_type in entity_pools:
-		return entity_pools[entity_type].get("container", "Props")
-	
-	# 默认分类
-	if entity_type in ["tree", "rock", "stump"]:
-		return "Trees"
-	elif entity_type in ["barrel", "crate"]:
-		return "Destructibles"
-	else:
-		return "Props"
-
-func _log_debug(message: String):
-	"""条件调试输出"""
-	if DEBUG_MODE:
-		print("[B类] " + message)
-
-func _print_generation_summary():
-	"""打印生成摘要"""
-	if not DEBUG_MODE:
-		return
-	
-	print("=== B类生成摘要 ===")
-	print("主题: %s" % current_theme)
-	print("网格大小: %dx%d" % [grid_size.x, grid_size.y])
-	print("生成的块类型:")
-	
-	var type_counts = {}
-	for pos in grid_layout:
-		var type = grid_layout[pos]
-		type_counts[type] = type_counts.get(type, 0) + 1
-	
-	for type in type_counts:
-		print("  %s: %d" % [type, type_counts[type]])
-	
-	print("===================")
+func _theme_to_string() -> String:
+	match current_theme:
+		Room_Theme.SPRING: return "春原"
+		Room_Theme.DESERT: return "沙漠"
+		Room_Theme.FOREST: return "雨林"
+		Room_Theme.DUNGEON: return "地牢"
+		Room_Theme.COAST: return "海岸"
+		_: return "未知"

@@ -17,6 +17,18 @@ static var entity_pools = {
 			{
 				"path": "res://scenes/rooms/normal_rooms/content_layer/A_template/临时/tree002.tscn",
 				"size": Vector2i(4, 4)
+			},
+			{
+				"path": "res://scenes/rooms/normal_rooms/content_layer/A_template/临时/tree003.tscn",
+				"size": Vector2i(4, 4)
+			},
+			{
+				"path": "res://scenes/rooms/normal_rooms/content_layer/A_template/临时/tree004.tscn",
+				"size": Vector2i(4, 4)
+			},
+			{
+				"path": "res://scenes/rooms/normal_rooms/content_layer/A_template/临时/tree005.tscn",
+				"size": Vector2i(4, 4)
 			}
 		],
 		"max_count": 4,

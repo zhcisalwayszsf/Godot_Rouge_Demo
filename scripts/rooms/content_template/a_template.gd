@@ -20,19 +20,20 @@ var selected_subgroups: Dictionary = {}
 func _ready():
 	var theme_path: String
 	match theme:
-		0: theme_path = "res://scripts/rooms/objectslist/spring_list.gd"
-		1: theme_path = "res://scripts/rooms/objectslist/spring_list.gd"
-		2: theme_path = "res://scripts/rooms/objectslist/spring_list.gd"
-		3: theme_path = "res://scripts/rooms/objectslist/spring_list.gd"
+		0: theme_path = "res://scripts/rooms/objectslist/A/spring_list.gd" ##春原
+		1: theme_path = "res://scripts/rooms/objectslist/A/spring_list.gd" ##沙漠
+		2: theme_path = "res://scripts/rooms/objectslist/A/spring_list.gd" ##雨林
+		3: theme_path = "res://scripts/rooms/objectslist/A/spring_list.gd" ##地牢
+		4: theme_path = "res://scripts/rooms/objectslist/A/spring_list.gd" ##海岸
 	
 	entity_pools = load(theme_path).entity_pools
 	rng = RandomNumberGenerator.new()
 	rng.randomize()
 	populate()
 
-func populate(floor_level: int = 1, room_type = null):
+func populate(room_type = null): ##主生成方法
 	"""主生成方法"""
-	print("  [A类-Resource版] 开始生成内容")
+	print("[A类-Resource版] 开始生成内容")
 	
 	entity_layer = get_node_or_null("EntityLayer")
 	if not entity_layer:
@@ -44,7 +45,6 @@ func populate(floor_level: int = 1, room_type = null):
 	selected_subgroups.clear()
 	
 	global_seed_offset = rng.randi()
-	_adjust_for_floor_level(floor_level)
 	
 	# 收集所有SpawnMarker
 	var all_markers = _collect_all_markers()
@@ -90,13 +90,7 @@ func _collect_markers_recursive(node: Node, markers: Array[SpawnMarker]):
 		elif child.get_child_count() > 0:
 			_collect_markers_recursive(child, markers)
 
-func _adjust_for_floor_level(floor_level: int):
-	"""根据楼层调整生成密度"""
-	var density_multiplier = 1.0 + (floor_level * 0.1)
-	
-	for type in entity_pools.keys():
-		var base_max = entity_pools[type].max_count
-		entity_pools[type].max_count = int(base_max * density_multiplier)
+
 
 func _preprocess_exclusive_groups_v3(markers: Array[SpawnMarker]):
 	"""预处理互斥组，随机选择子组"""
