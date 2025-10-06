@@ -6,6 +6,7 @@
 z_as_relative = false
 y_sort_enabled = true
 script = ExtResource("1_4dvlq")
+DEBUG_MODE = false
 
 [node name="BlockGrid" type="Node2D" parent="."]
 z_as_relative = false

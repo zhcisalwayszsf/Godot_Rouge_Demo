@@ -1,5 +1,5 @@
 extends Node2D
-var level_node
+var level_node:Node2D
 var level_data
 
 
@@ -12,4 +12,10 @@ func _input(event: InputEvent) -> void:
 	if event.is_action_pressed("test"):
 		level_data = NormalLevelGenerator.generate()
 		level_node = level_data.level_node 
+		LevelManager.initialize_from_level_data(level_data)
+		LevelManager.populate_all_rooms()
+		level_node.get_node("room1").add_child(load("res://scenes/buildings/Blacksmith.tscn").instantiate())
 		add_child(level_node)
+	if event.is_action_pressed("space"):
+		level_node.queue_free()
+		

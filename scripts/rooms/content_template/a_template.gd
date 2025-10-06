@@ -17,7 +17,8 @@ var global_seed_offset: int = 0
 var exclusive_group_counts: Dictionary = {}
 var selected_subgroups: Dictionary = {}
 
-func _ready():
+func _init() -> void:
+
 	var theme_path: String
 	match theme:
 		0: theme_path = "res://scripts/rooms/objectslist/A/spring_list.gd" ##春原
@@ -29,9 +30,9 @@ func _ready():
 	entity_pools = load(theme_path).entity_pools
 	rng = RandomNumberGenerator.new()
 	rng.randomize()
-	populate()
+	#populate()
 
-func populate(room_type = null): ##主生成方法
+func populate(floor_level=1, room_type = null): ##主生成方法
 	"""主生成方法"""
 	print("[A类-Resource版] 开始生成内容")
 	
