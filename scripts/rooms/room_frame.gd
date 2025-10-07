@@ -5,7 +5,18 @@ extends Node2D
 var tiles_floor : TileMapLayer
 var tiles_wall : TileMapLayer
 
-
+var spring_floor
+var spring_wall
+var desert_floor
+var desert_wall
+var forest_floor
+var forest_wall
+var dungeon_floor
+var dungeon_wall
+var coast_floor
+var coast_wall
+#var test_floor
+#var test_wall
 
 # TileMap的拐角定位点
 var cornor_lt : Vector2i = Vector2i(-27,-17)
@@ -19,10 +30,20 @@ var room_name
 
 signal player_entered(room_name: String)
 
-func _init() -> void:
-	tiles_floor = preload("res://scenes/rooms/normal_rooms/floor_layers//Spring/spring_room_floor.tscn").instantiate()
-	tiles_wall = preload("res://scenes/rooms/normal_rooms/floor_layers//Spring/spring_room_rect_wall.tscn").instantiate()
-	
+func _init():
+	spring_floor= preload("res://scenes/rooms/normal_rooms/floor_layers//Spring/spring_room_floor.tscn")
+	spring_wall = preload("res://scenes/rooms/normal_rooms/floor_layers//Spring/spring_room_rect_wall.tscn")
+	desert_floor= preload("res://scenes/rooms/normal_rooms/floor_layers//Spring/spring_room_floor.tscn")
+	desert_wall = preload("res://scenes/rooms/normal_rooms/floor_layers//Spring/spring_room_rect_wall.tscn")
+	forest_floor= preload("res://scenes/rooms/normal_rooms/floor_layers//Spring/spring_room_floor.tscn")
+	forest_wall = preload("res://scenes/rooms/normal_rooms/floor_layers//Spring/spring_room_rect_wall.tscn")
+	dungeon_floor= preload("res://scenes/rooms/normal_rooms/floor_layers//Spring/spring_room_floor.tscn")
+	dungeon_wall = preload("res://scenes/rooms/normal_rooms/floor_layers//Spring/spring_room_rect_wall.tscn")
+	coast_floor= preload("res://scenes/rooms/normal_rooms/floor_layers//Spring/spring_room_floor.tscn")
+	coast_wall = preload("res://scenes/rooms/normal_rooms/floor_layers//Spring/spring_room_rect_wall.tscn")
+
+
+
 func _ready():
 	# 连接区域检测信号
 	if detection_area:
@@ -34,10 +55,31 @@ func _ready():
 	collision_shape.shape = rect_shape
 	detection_area.add_child(collision_shape)
 
+func load_tiles(room_theme):
+	match room_theme:
+		0:
+			tiles_floor = spring_floor.instantiate()
+			tiles_wall = spring_wall.instantiate()
+		1:
+			tiles_floor = desert_floor.instantiate()
+			tiles_wall = desert_wall.instantiate()
+		2:
+			tiles_floor = forest_floor.instantiate()
+			tiles_wall = forest_wall.instantiate()
+		3:
+			tiles_floor = dungeon_floor.instantiate()
+			tiles_wall = desert_wall.instantiate()
+		4:
+			tiles_floor = coast_floor.instantiate()
+			tiles_wall = coast_wall.instantiate()
+		_:
+			tiles_floor = spring_floor.instantiate()
+			tiles_wall = spring_wall.instantiate()
 
 func instantiate_tile(p_room_info: NormalLevelGenerator.RoomInfo):
 	room_info = p_room_info
 	room_name = p_room_info.room_name  # 保存房间名称
+	load_tiles(room_info.level_theme_in_room)
 	set_cornor_tile()
 	cancel_door()
 	add_door_walls()  # 新增：添加门洞墙体

@@ -5,12 +5,12 @@ extends Node2D
 
 # 主题枚举
 enum Room_Theme {
-	TEST,
-	SPRING,   # 春原
-	DESERT,   # 沙漠
-	FOREST,   # 雨林
-	DUNGEON,  # 地牢
-	COAST     # 海岸
+	#TEST,
+	SPRING=0,   # 春原
+	DESERT=1,   # 沙漠
+	FOREST=2,   # 雨林
+	DUNGEON=3,  # 地牢
+	COAST=4     # 海岸
 }
 
 # 网格配置
@@ -24,6 +24,7 @@ const CELL_SIZE = Vector2(1480 / GRID_SIZE, 768/GRID_SIZE)  # 每个网格单元
 @export var current_theme: Room_Theme = Room_Theme.SPRING
 @export var floor_level: int = 1
 @export var room_type = null  # 从LevelManager传入的房间类型
+@export var content_scale: float = 2.0  # 内容物缩放系数（可在编辑器中调整）
 
 # 运行时变量
 var rng: RandomNumberGenerator
@@ -36,16 +37,20 @@ var grid_positions: Array = []  # 3x3网格位置
 var max_blocks_limit: int = 9   # 最大块数限制
 var spread_factor: float = 1.0  # 分散因子
 
-func _ready() -> void:
+func _init() -> void:
 	rng = RandomNumberGenerator.new()
 	rng.randomize()
 	
 	# 初始化网格位置
 	_initialize_grid_positions()
-	
-	 #如果在编辑器中测试，自动生成
-	if DEBUG_MODE:
-		populate(1, null)
+
+#func _ready() -> void:
+	 ##如果在编辑器中测试，自动生成
+	#if DEBUG_MODE:
+		#populate(1, null)
+
+func set_theme(theme:int): ##限定主题
+	current_theme = theme
 
 func populate(level: int = 1, room_type_param = null, max_blocks: int = 9, spread: float = 1.0):
 	"""主生成方法 - 被LevelManager调用"""
@@ -55,11 +60,12 @@ func populate(level: int = 1, room_type_param = null, max_blocks: int = 9, sprea
 	spread_factor = clampf(spread, 0.0, 1.0) # 接收分散因子
 	
 	if DEBUG_MODE:
-		print("[B类模板] 开始生成内容 - 主题: %s, 楼层: %d, MaxBlocks: %d, Spread: %.1f" % [
+		print("[B类模板] 开始生成内容 - 主题: %s, 楼层: %d, MaxBlocks: %d, Spread: %.1f, Scale: %.2f" % [
 			_theme_to_string(), 
 			floor_level,
 			max_blocks_limit,
-			spread_factor
+			spread_factor,
+			content_scale
 		])
 	
 	# 获取EntityLayer
@@ -114,10 +120,9 @@ func _initialize_grid_positions():
 func _load_configurations() -> bool:
 	"""加载块配置和装饰物配置"""
 	var block_path = _get_block_config_path()
-	var decoration_path = _get_decoration_config_path()
-	
+	var path_list_script = load(block_path)
 	# 加载块配置
-	var block_script = load(block_path)
+	var block_script = path_list_script
 	if not block_script:
 		push_error("无法加载块配置: %s" % block_path)
 		return false
@@ -125,9 +130,9 @@ func _load_configurations() -> bool:
 	block_config = block_script.block_pools
 	
 	# 加载装饰物配置
-	var decoration_script = load(decoration_path)
+	var decoration_script = path_list_script
 	if not decoration_script:
-		push_error("无法加载装饰物配置: %s" % decoration_path)
+		push_error("无法加载装饰物配置: %s" % path_list_script)
 		return false
 	
 	decoration_config = decoration_script.decoration_pools
@@ -140,13 +145,11 @@ func _load_configurations() -> bool:
 	
 	return true
 
-# ... (_get_block_config_path 和 _get_decoration_config_path 保持不变) ...
-
 func _get_block_config_path() -> String:
 	"""获取块配置文件路径"""
 	match current_theme:
-		Room_Theme.TEST:
-			return "res://scripts/rooms/objectslist/B/Test_Block_List.gd"
+		#Room_Theme.TEST:
+			#return "res://scripts/rooms/objectslist/B/Test_Block_List.gd"
 		Room_Theme.SPRING:
 			return "res://scripts/rooms/objectslist/B/Test_Block_List.gd"
 		Room_Theme.DESERT:
@@ -159,24 +162,6 @@ func _get_block_config_path() -> String:
 			return "res://scripts/rooms/objectslist/B/Test_Block_List.gd"
 		_:
 			return "res://scripts/rooms/objectslist/B/Test_Block_List.gd"
-
-func _get_decoration_config_path() -> String:
-	"""获取装饰物配置文件路径"""
-	match current_theme:
-		Room_Theme.TEST:
-			return "res://scripts/rooms/objectslist/B/decoration/test_decoration.gd"
-		Room_Theme.SPRING:
-			return "res://scripts/rooms/objectslist/B/decoration/spring_decoration.gd"
-		Room_Theme.DESERT:
-			return "res://scripts/rooms/objectslist/B/decoration/desert_decoration.gd"
-		Room_Theme.FOREST:
-			return "res://scripts/rooms/objectslist/B/decoration/forest_decoration.gd"
-		Room_Theme.DUNGEON:
-			return "res://scripts/rooms/objectslist/B/decoration/dungeon_decoration.gd"
-		Room_Theme.COAST:
-			return "res://scripts/rooms/objectslist/B/decoration/coast_decoration.gd"
-		_:
-			return "res://scripts/rooms/objectslist/B/decoration/spring_decoration.gd"
 
 
 func _select_block_combination() -> Array:
@@ -269,8 +254,6 @@ func _apply_exclusion_rules(all_blocks: Array) -> Array:
 				print("    [互斥检查] %s 被排除" % block_name)
 	
 	return candidates
-
-# ... (_blocks_are_exclusive, _select_blocks_with_synergy, _select_next_synergy_block, _random_select_blocks 保持不变) ...
 
 func _blocks_are_exclusive(block_a: String, block_b: String, exclusion_map: Dictionary) -> bool:
 	"""检查两个块之间是否互斥"""
@@ -392,6 +375,9 @@ func _instantiate_single_block(block_name: String, grid_cell: Dictionary, half_s
 	
 	var block_instance = block_scene.instantiate()
 	
+	# 应用内容物缩放
+	block_instance.scale = Vector2(content_scale, content_scale)
+	
 	# 创建或获取块容器
 	var container = _get_or_create_container(block_data.get("container", "Blocks"))
 	
@@ -402,11 +388,12 @@ func _instantiate_single_block(block_name: String, grid_cell: Dictionary, half_s
 	container.add_child(block_instance)
 	
 	if DEBUG_MODE:
-		print("  [实例化] 块: %s 位置: (%d,%d), 区域: %s" % [
+		print("  [实例化] 块: %s 位置: (%d,%d), 区域: %s, 缩放: %.2f" % [
 			block_name,
 			grid_cell.grid_x,
 			grid_cell.grid_y,
-			"左" if half_side == 0 else "右"
+			"左" if half_side == 0 else "右",
+			content_scale
 		])
 	
 	# 标记网格为已占用
@@ -438,7 +425,6 @@ func _select_scene_by_probability(scenes: Array) -> String:
 	return _weighted_random_choice(paths, weights)
 
 func _add_decorations_for_block(block_name: String, grid_cell: Dictionary, block_half_side: int):
-#                                                                           ^^^^^^^^^^^^^^^^^^^ 新增参数
 	"""为块添加装饰物"""
 	if block_name not in decoration_config:
 		return
@@ -453,7 +439,7 @@ func _add_decorations_for_block(block_name: String, grid_cell: Dictionary, block
 	# 装饰物强制反选 (1 - half_side)
 	# 如果主体块在左侧 (0)，装饰物强制在右侧 (1)。
 	# 如果主体块在右侧 (1)，装饰物强制在左侧 (0)。
-	var deco_half_side = 1 - block_half_side # <--- 关键修改
+	var deco_half_side = 1 - block_half_side
 	
 	# 随机选择装饰物数量
 	var decoration_count = rng.randi_range(0, max_decorations)
@@ -469,6 +455,9 @@ func _add_decorations_for_block(block_name: String, grid_cell: Dictionary, block
 			continue
 		
 		var decoration_instance = decoration_scene.instantiate()
+		
+		# 应用内容物缩放（装饰物也应用相同缩放）
+		decoration_instance.scale = Vector2(content_scale, content_scale)
 		
 		# 在网格单元的指定半区内随机位置
 		var random_offset = _get_random_offset_in_cell(deco_half_side)

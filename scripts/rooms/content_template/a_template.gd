@@ -18,7 +18,15 @@ var exclusive_group_counts: Dictionary = {}
 var selected_subgroups: Dictionary = {}
 
 func _init() -> void:
+	rng = RandomNumberGenerator.new()
+	rng.randomize()
+	#populate()
+	
+func _ready() -> void:
+	scale = Vector2(2,2)
 
+func _initialize(theme:int = 0):
+	theme = self.theme if theme<0 or theme >4 else theme
 	var theme_path: String
 	match theme:
 		0: theme_path = "res://scripts/rooms/objectslist/A/spring_list.gd" ##春原
@@ -26,11 +34,11 @@ func _init() -> void:
 		2: theme_path = "res://scripts/rooms/objectslist/A/spring_list.gd" ##雨林
 		3: theme_path = "res://scripts/rooms/objectslist/A/spring_list.gd" ##地牢
 		4: theme_path = "res://scripts/rooms/objectslist/A/spring_list.gd" ##海岸
+		_: theme_path = "res://scripts/rooms/objectslist/A/spring_list.gd" ## 默认春原
 	
 	entity_pools = load(theme_path).entity_pools
-	rng = RandomNumberGenerator.new()
-	rng.randomize()
-	#populate()
+
+
 
 func populate(floor_level=1, room_type = null): ##主生成方法
 	"""主生成方法"""

@@ -1,6 +1,6 @@
 [gd_scene load_steps=3 format=3 uid="uid://dp7rb5pqydya7"]
 
-[ext_resource type="Texture2D" uid="uid://b2rbelem0jqos" path="res://assets/grounds/DIY/tree3.png" id="1_21382"]
+[ext_resource type="Texture2D" uid="uid://b2rbelem0jqos" path="res://assets/grounds/DIY/tree3.png" id="1_vye0q"]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_ug302"]
 radius = 5.0
@@ -17,5 +17,5 @@ shape = SubResource("CircleShape2D_ug302")
 [node name="Sprite2D" type="Sprite2D" parent="."]
 texture_filter = 1
 position = Vector2(0, -48)
-texture = ExtResource("1_21382")
+texture = ExtResource("1_vye0q")
 region_rect = Rect2(0, 224, 160, 160)

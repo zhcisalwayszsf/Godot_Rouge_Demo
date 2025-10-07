@@ -1,4 +1,4 @@
-# 改进版关卡管理器 - 优化资源管理和模板选择
+# 改进版关卡管理器 - 优化资源管理和模板选择 (主题解耦版)
 extends Node
 
 # A类模板池 - 精心设计的固定布局
@@ -8,7 +8,7 @@ var b_templates
 # 房间类型枚举
 enum RoomType {
 	NORMAL_COMBAT,    # 普通战斗房
-	SPECIAL_COMBAT,   # 特殊战斗房（精英房间/挑战房）
+	SPECIAL_COMBAT,   # 特殊战斗房(精英房间/挑战房)
 	BOSS,             # Boss房
 	TREASURE,         # 宝箱/奖励房
 	SHOP,             # 商店房
@@ -18,19 +18,28 @@ enum RoomType {
 	SECRET            # 秘密房
 }
 
+# 主题枚举 (新增)
+enum RoomTheme {
+	SPRING,   # 春原
+	DESERT,   # 沙漠
+	FOREST,   # 雨林
+	DUNGEON,  # 地牢
+	COAST     # 海岸
+}
+
 # 内容生成模式
 enum ContentMode {
-	A_PREFAB,   # A类：精心设计
-	B_MIXED_BLOCKS,   # B类：积木拼接
+	A_PREFAB,   # A类:精心设计
+	B_MIXED_BLOCKS,   # B类:积木拼接
 	HYBRID            # 混合模式
 }
 
-# ============== 新增：关卡内容配置类 ==============
+# ============== 新增:关卡内容配置类 ==============
 class LevelContent:
 	var floor_level: int = 1
 	var rest_room_count: int = 0           # 休息房数量
 	var special_combat_room_count: int = 0 # 特殊战斗房数量
-	var shop_room: bool = true             # 是否生成商店房（最多一个）
+	var shop_room: bool = true             # 是否生成商店房(最多一个)
 	var max_corridor_room_count: int = 1   # 最大走廊房数量
 	var treasure_room_count: int = 0       # 宝藏房数量
 	var secret_room: bool = false          # 是否生成秘密房
@@ -41,7 +50,7 @@ class LevelContent:
 	
 	func validate_and_adjust(available_rooms: int):
 		"""验证并调整配置以确保可行性"""
-		# 必需房间：起始房(1) + Boss房(1) = 2
+		# 必需房间:起始房(1) + Boss房(1) = 2
 		var required_rooms = 2
 		
 		# 确保至少有1个普通战斗房
@@ -60,9 +69,9 @@ class LevelContent:
 		total_special_requested += max_corridor_room_count
 		
 		if total_special_requested > available_for_special:
-			_log_warning("特殊房间需求(%d)超出可用空间(%d)，将按优先级调整" % [total_special_requested, available_for_special])
+			_log_warning("特殊房间需求(%d)超出可用空间(%d),将按优先级调整" % [total_special_requested, available_for_special])
 			
-			# 按优先级削减（从低到高）
+			# 按优先级削减(从低到高)
 			var remaining = available_for_special
 			
 			# 优先级1: 特殊战斗房
@@ -95,7 +104,7 @@ class LevelContent:
 	func _log_warning(msg: String):
 		push_warning("[LevelContent] " + msg)
 
-# 房间数据结构（扩展版）
+# 房间数据结构(扩展版)
 class RoomData:
 	var room_name: String
 	var room_type: RoomType
@@ -105,11 +114,11 @@ class RoomData:
 	var connections: Array
 	var is_populated: bool = false
 	var template_path: String = ""  # 具体模板路径
-	var theme: String = ""  # 主题
+	var theme: int = 0  # 主题 (使用int以匹配枚举)
 	var difficulty_modifier: float = 1.0  # 难度系数
-	# 新增：块生成参数 (主要用于 B 类模板)
+	# 新增:块生成参数 (主要用于 B 类模板)
 	var max_blocks: int = 9         # 最大生成的块数量 (默认3x3网格的最大值)
-	var spread_factor: float = 1.0  # 块分散因子 (0-1)，1.0表示尽量分散，减少扎堆
+	var spread_factor: float = 1.0  # 块分散因子 (0-1),1.0表示尽量分散,减少扎堆
 	
 	func _init(name: String, type: RoomType, mode: ContentMode, level: int):
 		room_name = name
@@ -125,12 +134,10 @@ class RoomData:
 # ============== 状态变量 ==============
 var current_level_data: Dictionary = {}
 var current_floor_level: int = 1
-var current_level_content: LevelContent = null  # 新增：当前关卡内容配置
+var current_theme: int = RoomTheme.SPRING  # 新增:当前关卡主题
+var current_level_content: LevelContent = null  # 当前关卡内容配置
 var rooms_data: Dictionary = {}  # key: room_name, value: RoomData
 var loaded_templates: Dictionary = {}  # 缓存已加载的模板
-
-# ============== 模板配置（改进版） ==============
-
 
 # 信号
 signal room_type_assigned(room_name: String, room_type: RoomType)
@@ -148,9 +155,10 @@ func _ready():
 
 # ============== 主要接口 ==============
 
-func initialize_from_level_data(level_data: Dictionary, level_content: LevelContent = null):
-	"""从NormalLevelGenerator的输出初始化（新版本支持LevelContent配置）"""
+func initialize_from_level_data(level_data: Dictionary, level_content: LevelContent = null, theme: int = RoomTheme.SPRING):
+	"""从NormalLevelGenerator的输出初始化 (新增主题参数)"""
 	current_level_data = level_data
+	current_theme = theme  # 设置当前关卡主题
 	
 	# 使用传入的LevelContent或创建默认配置
 	if level_content:
@@ -158,7 +166,7 @@ func initialize_from_level_data(level_data: Dictionary, level_content: LevelCont
 	else:
 		# 使用默认配置
 		var grid_info = level_data.get("grid_info", {})
-		var floor_level = grid_info.get("floor_level", 1)
+		var floor_level = level_data.floor_level if level_data.floor_level else 1
 		current_level_content = LevelContent.new(floor_level)
 	
 	current_floor_level = current_level_content.floor_level
@@ -167,12 +175,13 @@ func initialize_from_level_data(level_data: Dictionary, level_content: LevelCont
 	
 	_log_debug("=== Level Manager 初始化 ===")
 	_log_debug("楼层: %d" % current_floor_level)
+	_log_debug("主题: %s" % _theme_to_string(current_theme))
 	_log_debug("房间数量: %d" % level_data.grid_info.room_count)
 	
 	# 验证配置可行性
 	current_level_content.validate_and_adjust(level_data.grid_info.room_count)
 	
-	# 分配房间类型（使用新的配置驱动方式）
+	# 分配房间类型(使用新的配置驱动方式)
 	_assign_room_types_by_content(level_data)
 	
 	# 选择内容生成模式
@@ -195,7 +204,7 @@ func set_room_generation_params(room_name: String, max_blocks: int, spread_facto
 		push_warning("尝试设置不存在的房间 %s 的生成参数" % room_name)
 
 func populate_all_rooms():
-	"""为所有房间生成内容（立即模式）"""
+	"""为所有房间生成内容(立即模式)"""
 	if current_level_data.is_empty():
 		push_error("Level Manager未初始化")
 		return
@@ -220,14 +229,14 @@ func populate_all_rooms():
 	all_rooms_populated.emit()
 
 func populate_room(room_name: String):
-	"""为单个房间生成内容（延迟加载）"""
+	"""为单个房间生成内容(延迟加载)"""
 	if room_name not in rooms_data:
 		push_error("房间数据不存在: %s" % room_name)
 		return
 	
 	var room_data = rooms_data[room_name] as RoomData
 	if room_data.is_populated:
-		_log_debug("房间 %s 已生成，跳过" % room_name)
+		_log_debug("房间 %s 已生成,跳过" % room_name)
 		return
 	
 	var level_node = current_level_data.level_node
@@ -244,7 +253,7 @@ func on_player_entered_room(room_name: String):
 	"""玩家进入房间时调用"""
 	_log_debug("玩家进入房间: %s" % room_name)
 	
-	# 延迟加载模式下，生成房间内容
+	# 延迟加载模式下,生成房间内容
 	if use_lazy_loading:
 		populate_room(room_name)
 	
@@ -260,7 +269,7 @@ func get_room_data(room_name: String) -> RoomData:
 	"""获取房间完整数据"""
 	return rooms_data.get(room_name, null)
 
-# ============== 私有方法 - 新版房间分配（基于LevelContent） ==============
+# ============== 私有方法 - 房间分配 ==============
 
 func _assign_room_types_by_content(level_data: Dictionary):
 	"""基于LevelContent配置分配房间类型"""
@@ -277,17 +286,17 @@ func _assign_room_types_by_content(level_data: Dictionary):
 	_log_debug("=== 开始按配置分配房间 ===")
 	_log_debug("总房间数: %d" % room_list.size())
 	
-	# 优先级1: 起始房（必需）
+	# 优先级1: 起始房(必需)
 	if "room1_info" in room_list:
 		_create_room_data("room1", RoomType.START, all_rooms_info["room1_info"])
 		room_list.erase("room1_info")
 		assigned_count += 1
 		_log_debug("✓ 起始房已分配")
 	
-	# 寻找末端房间（用于特殊房间分配）
+	# 寻找末端房间(用于特殊房间分配)
 	var end_rooms = _find_end_rooms(all_rooms_info, room_list)
 	
-	# 优先级2: Boss房（必需）
+	# 优先级2: Boss房(必需)
 	if not end_rooms.is_empty():
 		var boss_room_key = end_rooms[0]
 		var boss_room_name = boss_room_key.replace("_info", "")
@@ -306,7 +315,7 @@ func _assign_room_types_by_content(level_data: Dictionary):
 		assigned_count += 1
 		_log_debug("✓ Boss房已分配")
 	
-	# 优先级3: 普通战斗房（至少保留1个）
+	# 优先级3: 普通战斗房(至少保留1个)
 	var normal_combat_reserved = 1
 	
 	# 优先级4-8: 按配置分配特殊房间
@@ -332,7 +341,7 @@ func _assign_room_types_by_content(level_data: Dictionary):
 	for i in range(config.rest_room_count):
 		special_assignments.append(RoomType.REST)
 	
-	# 走廊房（从非末端房间中识别）
+	# 走廊房(从非末端房间中识别)
 	var corridor_count = 0
 	var max_corridors = config.max_corridor_room_count
 	
@@ -371,32 +380,7 @@ func _assign_room_types_by_content(level_data: Dictionary):
 		assigned_count += 1
 	
 	_log_debug("✓ %d个普通战斗房已分配" % room_list.size())
-	_log_debug("=== 房间分配完成，总计: %d ===\n" % assigned_count)
-
-# ============== 私有方法 - 房间分配（保留旧版本作为参考） ==============
-
-func _assign_room_types(level_data: Dictionary):
-	"""智能分配房间类型（旧版本，已废弃）"""
-	# 此方法保留用于兼容性，实际使用 _assign_room_types_by_content
-	pass
-
-func _calculate_special_rooms(available_slots: int) -> Array:
-	"""根据楼层计算特殊房间类型（旧版本）"""
-	var special_types = []
-	
-	if available_slots >= 1:
-		special_types.append(RoomType.TREASURE)
-	
-	if available_slots >= 2 and current_floor_level >= 2: 
-		if current_floor_level % 2 == 0:
-			special_types.append(RoomType.SHOP)
-		else:
-			special_types.append(RoomType.REST)
-	
-	if available_slots >= 3:
-		special_types.append(RoomType.REST)
-	
-	return special_types
+	_log_debug("=== 房间分配完成,总计: %d ===\n" % assigned_count)
 
 func _assign_content_modes():
 	"""智能分配内容生成模式"""
@@ -422,13 +406,13 @@ func _assign_content_modes():
 			RoomType.NORMAL_COMBAT, RoomType.SPECIAL_COMBAT:
 				# 根据楼层调整比例
 				if current_floor_level <= 3:
-					# 低楼层：60% B类（更随机）
+					# 低楼层:60% B类(更随机)
 					mode = ContentMode.B_MIXED_BLOCKS if rng.randf() < 0.6 else ContentMode.A_PREFAB
 				elif current_floor_level <= 7:
-					# 中楼层：70% B类
+					# 中楼层:70% B类
 					mode = ContentMode.B_MIXED_BLOCKS if rng.randf() < 0.7 else ContentMode.A_PREFAB
 				else:
-					# 高楼层：80% B类（更复杂）
+					# 高楼层:80% B类(更复杂)
 					mode = ContentMode.B_MIXED_BLOCKS if rng.randf() < 0.8 else ContentMode.A_PREFAB
 			
 			RoomType.REST:
@@ -436,31 +420,35 @@ func _assign_content_modes():
 		
 		room_data.content_mode = mode
 		
-		# 设置主题
+		# 设置主题 (统一使用当前关卡主题)
 		_assign_room_theme(room_data)
 
 func _assign_room_theme(room_data: RoomData):
-	"""为房间分配主题"""
+	"""为房间分配主题 (手动模式: 使用当前关卡主题)"""
+	room_data.theme = current_theme
+
+func _assign_room_theme_auto(room_data: RoomData):
+	"""为房间分配主题 (自动模式: 保留旧版本的楼层自动配置逻辑)"""
 	# 根据楼层和房间类型选择主题
 	if room_data.room_type == RoomType.REST:
-		room_data.theme = "peaceful"
+		room_data.theme = RoomTheme.SPRING
 	elif room_data.room_type == RoomType.BOSS:
 		if current_floor_level >= 10:
-			room_data.theme = "dark"
+			room_data.theme = RoomTheme.DUNGEON
 		elif current_floor_level >= 7:
-			room_data.theme = "mystical"
+			room_data.theme = RoomTheme.FOREST
 		else:
-			room_data.theme = "ruins"
+			room_data.theme = RoomTheme.DESERT
 	else:
 		# 根据楼层选择默认主题
 		if current_floor_level <= 3:
-			room_data.theme = "peaceful"
+			room_data.theme = RoomTheme.SPRING
 		elif current_floor_level <= 6:
-			room_data.theme = "ruins"
+			room_data.theme = RoomTheme.DESERT
 		elif current_floor_level <= 9:
-			room_data.theme = "mystical"
+			room_data.theme = RoomTheme.FOREST
 		else:
-			room_data.theme = "dark"
+			room_data.theme = RoomTheme.DUNGEON
 
 func _assign_templates():
 	"""为每个房间分配具体模板并设置默认生成参数"""
@@ -494,7 +482,7 @@ func _assign_templates():
 		if templates.is_empty():
 			continue
 		
-		# 如果没有权重或权重数量不匹配，使用均等权重
+		# 如果没有权重或权重数量不匹配,使用均等权重
 		if weights.is_empty() or weights.size() != templates.size():
 			room_data.template_path = templates[rng.randi() % templates.size()]
 		else:
@@ -517,7 +505,6 @@ func _weighted_random_choice(items: Array, weights: Array, rng: RandomNumberGene
 	return items[0]
 
 # ============== 私有方法 - 内容生成 ==============
-
 func _populate_single_room(room_node: Node2D, room_data: RoomData):
 	"""为单个房间生成内容"""
 	if room_data.is_populated:
@@ -527,7 +514,7 @@ func _populate_single_room(room_node: Node2D, room_data: RoomData):
 		room_data.room_name,
 		_room_type_to_string(room_data.room_type),
 		"A类" if room_data.content_mode == ContentMode.A_PREFAB else "B类",
-		room_data.theme,
+		_theme_to_string(room_data.theme),
 		room_data.max_blocks,
 		room_data.spread_factor
 	])
@@ -537,6 +524,8 @@ func _populate_single_room(room_node: Node2D, room_data: RoomData):
 	if not terrain_content:
 		terrain_content = Node2D.new()
 		terrain_content.name = "TerrainContent"
+		terrain_content.z_as_relative = true
+		terrain_content.y_sort_enabled = true
 		room_node.add_child(terrain_content)
 	
 	# 加载模板
@@ -550,6 +539,15 @@ func _populate_single_room(room_node: Node2D, room_data: RoomData):
 	var content_instance = template_scene.instantiate()
 	terrain_content.add_child(content_instance)
 	
+	# ===== 关键修改：先设置主题，再调用populate =====
+	# 设置主题 (必须在populate之前)
+	if content_instance.has_method("set_theme"):
+		content_instance.set_theme(room_data.theme)
+	elif content_instance.has_method("_initialize"):
+		content_instance._initialize(room_data.theme)
+	elif content_instance.has_property("current_theme"):
+		content_instance.set("current_theme", room_data.theme)
+	
 	# 调用模板的populate方法
 	if content_instance.has_method("populate"):
 		if room_data.content_mode == ContentMode.B_MIXED_BLOCKS:
@@ -557,20 +555,15 @@ func _populate_single_room(room_node: Node2D, room_data: RoomData):
 		else:
 			content_instance.populate(room_data.floor_level, room_data.room_type)
 	
-	# 如果是B类模板，设置主题
-	if room_data.content_mode == ContentMode.B_MIXED_BLOCKS:
-		if content_instance.has_method("set_theme"):
-			content_instance.set("current_theme", room_data.theme)
-	
 	room_data.is_populated = true
 	content_generated.emit(room_data.room_name)
 
 func _load_template(room_data: RoomData) -> PackedScene:
-	"""加载模板场景（带缓存）"""
+	"""加载模板场景(带缓存)"""
 	var template_path = room_data.template_path
 	
 	if template_path.is_empty(): 
-		# 如果没有预分配模板，动态选择
+		# 如果没有预分配模板,动态选择
 		template_path = _select_template_fallback(room_data)
 	
 	if template_path.is_empty(): 
@@ -685,6 +678,16 @@ func _room_type_to_string(type: RoomType) -> String:
 		RoomType.SECRET: return "秘密" 
 		_: return "未知"
 
+func _theme_to_string(theme: int) -> String:
+	"""主题枚举转字符串"""
+	match theme:
+		RoomTheme.SPRING: return "春原"
+		RoomTheme.DESERT: return "沙漠"
+		RoomTheme.FOREST: return "雨林"
+		RoomTheme.DUNGEON: return "地牢"
+		RoomTheme.COAST: return "海岸"
+		_: return "未知"
+
 func _log_debug(message: String):
 	"""条件调试输出"""
 	if DEBUG_MODE:
@@ -710,7 +713,7 @@ func _print_room_assignments():
 			room_name,
 			type_str,
 			"A类" if room_data.content_mode == ContentMode.A_PREFAB else "B类",
-			room_data.theme,
+			_theme_to_string(room_data.theme),
 			room_data.max_blocks,
 			room_data.spread_factor
 		])
@@ -719,4 +722,4 @@ func _print_room_assignments():
 	for type_str in type_counts.keys():
 		print("  %s: %d个" % [type_str, type_counts[type_str]])
 	print("  总计: %d个房间" % rooms_data.size())
-	print("===================\n")
+	print("===================")

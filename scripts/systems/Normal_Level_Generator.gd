@@ -83,18 +83,29 @@ var COMPLEXITY_BIAS: float = 0.5
 var RANDOM_SEED: int = -1
 var DEBUG_MODE: bool = false
 var HORIZONTAL_CONNECTION_BIAS: float = 0.3  # 新增：横向连接偏好度 (0.0-1.0)
+var FLOOR_LEVEL:int = 1
+var LEVEL_THEME:int = 0
 
 const ROOM_WIDTH = 1664
 const ROOM_HEIGHT = 1024
 
 enum Direction { LEFT = 0, RIGHT = 1, TOP = 2, BOTTOM = 3 }
 
+enum level_theme_list {
+		SPRING=0,   # 春原
+		DESERT=1,   # 沙漠
+		FOREST=2,   # 雨林
+		DUNGEON=3,  # 地牢
+		COAST=4
+		 }
+		
 # ============== 自定义数据结构 ==============
 class LevelData:
 	var level_node: Node2D = null
 	var grid_info: Dictionary = {}
 	var all_rooms_info: Dictionary = {}
-	
+	var floor_level:int = 1 
+	var level_theme :int =1
 	func _init():
 		grid_info = {
 			"grid_size": 0,
@@ -111,6 +122,7 @@ class RoomInfo:
 	var neighbors: Array = [null, null, null, null]
 	var diagonal_neighbors: Array = [false, false, false, false]  # 新增：[左上, 右上, 左下, 右下]
 	var HORIZONTAL_CONNECTION_BIAS: float = 0.3  # 新增：横向连接偏好度 (0.0-1.0)
+	var level_theme_in_room:int = 0
 	func to_dict() -> Dictionary:
 		return {
 			"room_name": room_name,
@@ -131,7 +143,9 @@ class level_config:
 		"COMPLEXITY_BIAS": 0.5 as float,
 		"RANDOM_SEED": -1 as int,
 		"DEBUG_MODE":false as bool,
-		"HORIZONTAL_CONNECTION_BIAS": 0.3 as float # 新增：横向连接偏好度 (0.0-1.0)
+		"HORIZONTAL_CONNECTION_BIAS": 0.3 as float, # 新增：横向连接偏好度 (0.0-1.0)
+		"FLOOR_LEVEL": 1 as int ,
+		"LEVEL_THEME":0 as int
 	}
 	
 var room_template = "res://scenes/rooms/normal_rooms/room_frame.tscn"
@@ -186,10 +200,11 @@ func generate(
 	complexity_bias: float = 0.5,
 	random_seed: int = -1,
 	debug_mode: bool = false,
-	horizontal_connection_bias: float = 0.3  
+	horizontal_connection_bias: float = 0.3 ,
+	floor_level: int = 1 ,
+	level_theme:int = 0
 ) -> Dictionary:
 	"""主方法 - 使用参数生成关卡，返回详细数据"""
-	
 	GRID_SIZE = grid_size
 	TARGET_ROOMS = target_rooms
 	CONNECTION_RATE = connection_rate
@@ -198,7 +213,12 @@ func generate(
 	RANDOM_SEED = random_seed
 	DEBUG_MODE = debug_mode
 	HORIZONTAL_CONNECTION_BIAS = horizontal_connection_bias  # 设置新参数
+	FLOOR_LEVEL = floor_level
+	LEVEL_THEME = level_theme
 	var level_data = _generate_level_internal()
+	# ✅ 设置楼层信息
+	level_data.floor_level= FLOOR_LEVEL
+	level_data.level_theme = LEVEL_THEME
 	return _convert_level_data_to_dict(level_data)
 
 func generate_with_config(config: Dictionary) -> Dictionary:
@@ -212,8 +232,13 @@ func generate_with_config(config: Dictionary) -> Dictionary:
 	RANDOM_SEED = config.RANDOM_SEED
 	DEBUG_MODE = config.DEBUG_MODE 
 	HORIZONTAL_CONNECTION_BIAS = config.HORIZONTAL_CONNECTION_BIAS
+	LEVEL_THEME = config.LEVEL_THEME
+	FLOOR_LEVEL = config.FLOOR_LEVEL
 
 	var level_data = _generate_level_internal()
+	# ✅ 从配置中读取楼层信息
+	level_data.floor_level = FLOOR_LEVEL if FLOOR_LEVEL and FLOOR_LEVEL>=0 and FLOOR_LEVEL<6 else 1
+	level_data.level_theme = LEVEL_THEME
 	return _convert_level_data_to_dict(level_data)
 
 # ============== 内部生成逻辑 ==============
@@ -377,6 +402,7 @@ func _convert_level_data_to_dict(level_data: LevelData) -> Dictionary:
 	return {
 		"level_node": level_data.level_node,
 		"grid_info": level_data.grid_info,
+		"floor_level": level_data.floor_level,
 		"all_rooms_info": level_data.all_rooms_info
 	}
 
@@ -523,7 +549,7 @@ func _create_room_info_for_position(room_pos: Vector2i, room_name: String) -> No
 	for i in range(4):
 		var diagonal_pos = room_pos + diagonal_offsets[i]
 		room_info.diagonal_neighbors[i] = is_room_at(diagonal_pos)
-	
+	room_info.level_theme_in_room = LEVEL_THEME
 	return room_info
 
 

@@ -91,20 +91,16 @@ static var b_templates: Dictionary = {
 	RoomType.NORMAL_COMBAT: {
 		"templates": [
 			"res://scenes/rooms/normal_rooms/content_layer/B_template/B_Room_Content.tscn",
-			"res://scenes/rooms/normal_rooms/content_layer/B_template/B_Room_Content.tscn",
-			"res://scenes/rooms/normal_rooms/content_layer/B_template/B_Room_Content.tscn"
 		],
-		"weights": [1.0, 0.7, 0.5], 
+		"weights": [1.0], 
 		"min_floor": 1,
 		"max_floor": 99
 	},
 	RoomType.SPECIAL_COMBAT: {
 		"templates": [
-			"res://scenes/rooms/normal_rooms/content_layer/B_template/B_Room_Content.tscn",
-			"res://scenes/rooms/normal_rooms/content_layer/B_template/B_Room_Content.tscn",
 			"res://scenes/rooms/normal_rooms/content_layer/B_template/B_Room_Content.tscn"
 		],
-		"weights": [1.0, 0.7, 0.5], 
+		"weights": [1.0], 
 		"min_floor": 1,
 		"max_floor": 99
 	}

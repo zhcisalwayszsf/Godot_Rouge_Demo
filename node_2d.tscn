@@ -1,21 +1,9 @@
-[gd_scene load_steps=3 format=3 uid="uid://di4es468mrs7r"]
+[gd_scene load_steps=2 format=3 uid="uid://di4es468mrs7r"]
 
 [ext_resource type="Script" uid="uid://b50cawrb85bp5" path="res://node_2d.gd" id="1_wtcfe"]
-
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_0hol4"]
-size = Vector2(480, 256)
 
 [node name="Node2D" type="Node2D"]
 z_index = -7
 z_as_relative = false
 y_sort_enabled = true
 script = ExtResource("1_wtcfe")
-
-[node name="Area2D" type="Area2D" parent="."]
-visible = false
-
-[node name="CollisionShape2D" type="CollisionShape2D" parent="Area2D"]
-z_index = 1
-z_as_relative = false
-position = Vector2(448, 176)
-shape = SubResource("RectangleShape2D_0hol4")
