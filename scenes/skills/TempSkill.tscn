@@ -1,6 +1,6 @@
 [gd_scene load_steps=3 format=3 uid="uid://b881frml0ppy8"]
 
-[ext_resource type="Texture2D" uid="uid://dithfprgumf0u" path="res://icon.svg" id="1_yu0rx"]
+[ext_resource type="Texture2D" uid="uid://ckswljcpb6ek" path="res://icon.svg" id="1_yu0rx"]
 
 [sub_resource type="Theme" id="Theme_xb26d"]
 Label/font_sizes/font_size = 24

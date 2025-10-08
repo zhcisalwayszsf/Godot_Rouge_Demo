@@ -126,11 +126,6 @@ func equip_skill_with_script(p_skill_data: SkillData, p_slot: int) -> bool:
 	if not p_skill_data or p_slot < 0 or p_slot > 1:
 		print("装备技能失败: 无效参数")
 		return false
-		
-	var is_equiped_script = equip_skill_scrtpt(p_skill_data.skill_name, p_slot)
-	if not is_equiped_script:
-		print("装备技能失败: 装备脚本失败")
-		return false
 	
 	if p_slot == 0:
 		primary_skill_data = p_skill_data
@@ -142,6 +137,11 @@ func equip_skill_with_script(p_skill_data: SkillData, p_slot: int) -> bool:
 		secondary_skill_level = 1
 		secondary_cd_timer.wait_time = p_skill_data.cooldown_time
 		PlayerDataManager.equip_secondary_skill(p_skill_data)
+		
+	var is_equiped_script = equip_skill_script(p_skill_data.skill_name, p_slot)
+	if not is_equiped_script:
+		print("装备技能失败: 装备脚本失败")
+		return false
 	
 	skill_equipped.emit(p_skill_data, p_slot)
 	print("SkillSystem：装备技能: ", p_skill_data.skill_name, " 到槽位 ", p_slot)
@@ -161,7 +161,7 @@ func load_skill_script(skill_name: String, slot: int) -> Script:
 		print("技能脚本不存在: ", script_path)
 		return null
 
-func equip_skill_scrtpt(p_skill_name: String, p_slot: int) -> bool:
+func equip_skill_script(p_skill_name: String, p_slot: int) -> bool:
 	"""挂载技能脚本"""
 	var skill_script = load_skill_script(p_skill_name, p_slot)
 	if not skill_script:
@@ -169,13 +169,26 @@ func equip_skill_scrtpt(p_skill_name: String, p_slot: int) -> bool:
 		return false
 		
 	if skill_pivot:
+		var skill_node
 		if p_slot == 0:
-			skill_pivot.get_node("PrimarySkill").set_script(skill_script)
+			skill_node = skill_pivot.get_node("PrimarySkill")
 		elif p_slot == 1:
-			skill_pivot.get_node("SecondarySkill").set_script(skill_script)
+			skill_node = skill_pivot.get_node("SecondarySkill")
 		else:
 			print("加载技能脚本失败：无效的技能槽")
 			return false
+		# 设置脚本
+		skill_node.set_script(skill_script)
+		skill_node.skill_data = get_skill_data(p_slot)
+		# ✅ 关键：手动调用初始化方法
+		if skill_node.has_method("initialize_skill"):
+			skill_node.initialize_skill()
+		
+		# ✅ 启用 process（如果需要）
+		if skill_node.has_method("_process"):
+			skill_node.set_process(true)
+		if skill_node.has_method("_physics_process"):
+			skill_node.set_physics_process(true)
 	return true
 	
 func unequip_skill_scrtpt(p_slot: int) -> bool:

@@ -1,6 +1,5 @@
 # Normal_Level_Generator.gd
 # 单例模式的随机关卡生成器 - 返回详细数据结构版本
-
 extends Node
 """
 ================================================================================
@@ -221,7 +220,7 @@ func generate(
 	level_data.level_theme = LEVEL_THEME
 	return _convert_level_data_to_dict(level_data)
 
-func generate_with_config(config: Dictionary) -> Dictionary:
+func generate_with_config(config: Dictionary) -> Dictionary: ## 副方法 - 使用完整配置生成关卡，返回详细数据
 	"""副方法 - 使用完整配置生成关卡，返回详细数据"""
 	
 	GRID_SIZE = config.GRID_SIZE
@@ -243,7 +242,7 @@ func generate_with_config(config: Dictionary) -> Dictionary:
 
 # ============== 内部生成逻辑 ==============
 
-func _generate_level_internal() -> LevelData:
+func _generate_level_internal() -> LevelData: ## 内部生成方法 - 返回LevelData对象
 	"""内部生成方法 - 返回LevelData对象"""
 	
 	var level_data = LevelData.new()
@@ -331,7 +330,7 @@ func _generate_level_internal() -> LevelData:
 	return level_data
 
 # 优化_collect_rooms_info，添加更多null检查
-func _collect_rooms_info() -> Dictionary:
+func _collect_rooms_info() -> Dictionary: ## 收集所有房间的详细信息
 	"""收集所有房间的详细信息"""
 	var all_rooms_info = {}
 	
@@ -397,7 +396,7 @@ func _collect_rooms_info() -> Dictionary:
 	final_room_info = all_rooms_info
 	return all_rooms_info
 
-func _convert_level_data_to_dict(level_data: LevelData) -> Dictionary:
+func _convert_level_data_to_dict(level_data: LevelData) -> Dictionary: ## 将LevelData转换为字典格式
 	"""将LevelData转换为字典格式"""
 	return {
 		"level_node": level_data.level_node,
@@ -407,7 +406,7 @@ func _convert_level_data_to_dict(level_data: LevelData) -> Dictionary:
 	}
 
 # 优化_instantiate_rooms_to_level，避免await导致的问题
-func _instantiate_rooms_to_level(level_node: Node2D):
+func _instantiate_rooms_to_level(level_node: Node2D): ## 将房间实例化到Level节点
 	"""将房间实例化到Level节点"""
 	
 	if rooms.is_empty():
@@ -478,7 +477,7 @@ func _instantiate_rooms_to_level(level_node: Node2D):
 	print("房间列表: ", room_position_map.values())
 
 # 优化_create_room_info_for_position，确保不返回null
-func _create_room_info_for_position(room_pos: Vector2i, room_name: String) -> NormalLevelGenerator.RoomInfo:
+func _create_room_info_for_position(room_pos: Vector2i, room_name: String) -> NormalLevelGenerator.RoomInfo: ##为指定位置创建RoomInfo对象 - 用于实例化时调用
 	"""为指定位置创建RoomInfo对象 - 用于实例化时调用"""
 	var cell = grid.get(room_pos) as RoomCell
 	if not cell:
@@ -554,7 +553,7 @@ func _create_room_info_for_position(room_pos: Vector2i, room_name: String) -> No
 
 
 
-func _create_room_instance(grid_pos: Vector2i, room_type: String) -> Node2D:
+func _create_room_instance(grid_pos: Vector2i, room_type: String) -> Node2D: ##创建房间实例 - 统一使用 room_frame 模板
 	"""创建房间实例 - 统一使用 room_frame 模板"""
 	
 	var room_scene = load(room_template)
@@ -664,7 +663,7 @@ func _generate_fallback_level():
 	_log_debug("备用布局完成: %d 个房间" % rooms.size())
 
 # ============== 第一阶段：房间布局生成 ==============
-func phase_one_room_placement() -> bool:
+func phase_one_room_placement() -> bool: ## 使用多种策略生成房间布局
 	"""使用多种策略生成房间布局"""
 	var strategy = choose_placement_strategy()
 	var success = false
@@ -875,7 +874,7 @@ func calculate_connection_weight(pos1: Vector2i, pos2: Vector2i, dir: Direction)
 	return weight
 
 # 添加新的连接选择策略
-func select_connections_with_direction_balance() -> Array:
+func select_connections_with_direction_balance() -> Array: ##考虑方向平衡的连接选择
 	"""考虑方向平衡的连接选择"""
 	var selected = []
 	
@@ -942,7 +941,7 @@ func select_connections_with_direction_balance() -> Array:
 	return selected
 
 # 添加模式检查，避免过度直连
-func should_add_connection_with_pattern_check(conn: PotentialConnection, existing: Array) -> bool:
+func should_add_connection_with_pattern_check(conn: PotentialConnection, existing: Array) -> bool: ##检查是否应该添加连接，避免过度直连
 	"""检查是否应该添加连接，避免过度直连"""
 	
 	# 原有的连接度检查
@@ -987,7 +986,7 @@ func should_add_connection_with_pattern_check(conn: PotentialConnection, existin
 		return rng.randf() < 0.4
 
 # 检测是否形成网格模式
-func is_creating_grid_pattern(conn: PotentialConnection, existing: Array) -> bool:
+func is_creating_grid_pattern(conn: PotentialConnection, existing: Array) -> bool: ## 检测添加此连接是否会形成简单的网格模式
 	"""检测添加此连接是否会形成简单的网格模式"""
 	
 	# 检查是否会形成一个完整的矩形
@@ -1301,7 +1300,7 @@ func find_bridge_connection(unreachable_room: Vector2i, reachable_rooms: Array) 
 	return null
 
 # ============== 验证和辅助函数 ==============
-func validate_final_generation() -> Dictionary:
+func validate_final_generation() -> Dictionary: ## 最终生成验证
 	"""最终生成验证"""
 	var result = {
 		"is_valid": true,
@@ -1343,7 +1342,7 @@ func validate_final_generation() -> Dictionary:
 	
 	return result
 
-func supplement_to_target():
+func supplement_to_target(): ## 补充房间到目标数量
 	"""补充房间到目标数量"""
 	var attempts = 0
 	var max_attempts = 50
@@ -1419,6 +1418,7 @@ func find_valid_start_position() -> Vector2i:
 	return Vector2i(-1, -1)
 
 """
+已弃用
 func get_room_type_from_connections(connections: Array) -> String:
 	var type_str = ""
 	

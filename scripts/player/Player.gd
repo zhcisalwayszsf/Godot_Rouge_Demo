@@ -17,7 +17,7 @@ var base_move_speed: float = 300.0
 @onready var animationrTree = $Visuals/AnimationTree
 var last_move_direction:Vector2 = Vector2.DOWN
 
-# 位移技能相关 - 重构后的结构
+# 位移技能相关
 var movement_state: MovementState = MovementState.NORMAL
 var dash_data: DashData = DashData.new()
 

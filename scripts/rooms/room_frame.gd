@@ -25,7 +25,7 @@ var cornor_rb : Vector2i = Vector2i(25,15)
 var cornor_rt : Vector2i = Vector2i(25,-17)
 
 var room_info: NormalLevelGenerator.RoomInfo
-var wall_body: StaticBody2D  # 墙体碰撞节点
+var wall_body: StaticBody2D  ## 墙体碰撞节点
 var room_name
 
 signal player_entered(room_name: String)
@@ -78,7 +78,7 @@ func load_tiles(room_theme):
 
 func instantiate_tile(p_room_info: NormalLevelGenerator.RoomInfo):
 	room_info = p_room_info
-	room_name = p_room_info.room_name  # 保存房间名称
+	room_name = p_room_info.room_name  ## 保存房间名称
 	load_tiles(room_info.level_theme_in_room)
 	set_cornor_tile()
 	cancel_door()
@@ -88,7 +88,7 @@ func instantiate_tile(p_room_info: NormalLevelGenerator.RoomInfo):
 	add_child(tiles_floor)
 
 func set_cornor_tile():
-	# 获取房间邻居信息
+	## 获取房间邻居信息
 	var lt_info = get_neighbor("lt")
 	var lb_info = get_neighbor("lb")
 	var rb_info = get_neighbor("rb")
