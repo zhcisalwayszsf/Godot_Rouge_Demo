@@ -518,9 +518,46 @@ func start_cooldown(cooldown_time: float,type:int=0):
 			click_cooldown_timer.start()
 
 func execute_fire(weapon_data: WeaponData, weapon_component: WeaponComponent):
-	"""执行开火"""
+	"""执行开火 - 根据武器类型执行不同的射击逻辑"""
 	
 	var muzzle_point = weapon_component.muzzle_point
+	var aim_point = weapon_component.aim_point
+	if not muzzle_point:
+		print("错误: 武器组件缺少 MuzzlePoint 节点")
+		return
+	var row_direction:Vector2 = PlayerDataManager.player_node.get_global_mouse_position() - muzzle_point.global_position
+	if row_direction.length() < (muzzle_point.global_position- weapon_pivot.global_position).length():
+		row_direction = muzzle_point.global_position- aim_point.global_position
+	var direction:Vector2 = row_direction.normalized()
+	# 根据武器类型执行不同的射击逻辑
+	match weapon_data.gun_type:
+		0:  # 普通武器
+			execute_normal_fire(weapon_data, muzzle_point,direction)
+		1:  # 霰弹枪
+			execute_shotgun_fire(weapon_data, muzzle_point,direction)
+		2:  # 激光类
+			execute_laser_fire(weapon_data, muzzle_point,direction)
+		3:  # 狙击
+			execute_sniper_fire(weapon_data, muzzle_point,direction)
+		4:  # 火箭榴弹
+			execute_rpg_fire(weapon_data, muzzle_point,direction)
+		_:
+			print("警告: 未知的武器类型，使用普通射击")
+			execute_normal_fire(weapon_data, muzzle_point,direction)
+	
+	# 发射信号
+	weapon_fired.emit(weapon_data, muzzle_point.global_position, direction)
+	
+	# 播放音效
+	if AudioSystem:
+		AudioSystem.play_weapon_sound(weapon_data.weapon_name + "_fire")
+	
+	#print("武器开火: ", weapon_data.weapon_name, " 剩余弹匣: ", get_active_magazine_ammo())
+# === 不同武器类型的射击实现 ===
+
+func execute_normal_fire(weapon_data: WeaponData, muzzle_point: Node2D,direction:Vector2):
+	"""普通武器射击"""
+	# 创建子弹数据对象
 	if not muzzle_point:
 		print("错误: 武器组件缺少 MuzzlePoint 节点")
 		return
@@ -531,7 +568,6 @@ func execute_fire(weapon_data: WeaponData, weapon_component: WeaponComponent):
 	bullet_data.travel_range = weapon_data.attack_distance
 	bullet_data.speed = weapon_data.bullet_speed
 	bullet_data.size = weapon_data.bullet_size # 可以根据武器类型调整
-	var direction = (PlayerDataManager.player_node.get_global_mouse_position() - muzzle_point.global_position).normalized()
 	bullet_data.direction = get_weapon_precision(weapon_data,direction)
 	bullet_data.start_position = muzzle_point.global_position
 	#bullet_data.special_info = {"function":test}
@@ -547,15 +583,53 @@ func execute_fire(weapon_data: WeaponData, weapon_component: WeaponComponent):
 	if not bullet:
 		print("警告：无法从对象池获取子弹实例")
 		return
+
+func execute_shotgun_fire(weapon_data: WeaponData, muzzle_point: Node2D,direction:Vector2):
+	"""霰弹枪射击 - 一次发射多颗子弹"""
+	var bullet_count = weapon_data.shotgun_bullet_count if weapon_data.shotgun_bullet_count > 0 else 5
 	
-	# 发射信号
-	weapon_fired.emit(weapon_data, muzzle_point.global_position, bullet_data.direction)
 	
-	# 播放音效
-	if AudioSystem:
-		AudioSystem.play_weapon_sound(weapon_data.weapon_name + "_fire")
-	
-	#print("武器开火: ", weapon_data.weapon_name, " 剩余弹匣: ", get_active_magazine_ammo())
+	for i in range(bullet_count):
+		# 创建每颗子弹的数据
+		var bullet_data = Bullet.BulletData.new()
+		bullet_data.damage = WeaponDamageSystem.calculate_weapon_damage(active_weapon_slot)
+		bullet_data.travel_range = weapon_data.attack_distance
+		bullet_data.speed = weapon_data.bullet_speed
+		bullet_data.size = weapon_data.bullet_size
+		
+		# 为每颗子弹计算扩散方向
+		bullet_data.direction = get_weapon_precision(weapon_data,direction)
+		
+		bullet_data.start_position = muzzle_point.global_position
+		bullet_data.special_info = {"function": weapon_data.special_func} if weapon_data.special_func else {"function": func(): pass}
+		
+		# 从对象池获取子弹
+		var bullet = BulletPool.get_bullet(bullet_data)
+		if not bullet:
+			print("警告:无法从对象池获取霰弹子弹实例")
+			continue
+
+func execute_laser_fire(weapon_data: WeaponData, muzzle_point: Node2D,direction:Vector2):
+	"""激光武器射击 - 暂未实装"""
+	# TODO: 实现激光武器逻辑
+	# 可能需要使用射线检测而不是子弹实例
+	# weapon_data.remaining_time 用于激光留滞时间
+	pass
+
+func execute_sniper_fire(weapon_data: WeaponData, muzzle_point: Node2D,direction:Vector2):
+	"""狙击枪射击 - 暂未实装"""
+	# TODO: 实现狙击枪逻辑
+	# 可能需要特殊的瞄准机制
+	# weapon_data.aiming_precision 用于瞄准精准度
+	pass
+
+func execute_rpg_fire(weapon_data: WeaponData, muzzle_point: Node2D,direction:Vector2):
+	"""火箭榴弹发射器 - 暂未实装"""
+	# TODO: 实现火箭榴弹逻辑
+	# 需要爆炸效果和范围伤害
+	# weapon_data.rpg_explosion_range 用于爆炸范围
+	pass
+
 
 # === 弹药管理 ===
 

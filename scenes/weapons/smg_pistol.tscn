@@ -19,7 +19,10 @@ position = Vector2(16, 0)
 shape = SubResource("RectangleShape2D_5egnq")
 
 [node name="MuzzlePoint" type="Node2D" parent="."]
-position = Vector2(64, -16)
+position = Vector2(64, -13)
+
+[node name="AimPoint" type="Node2D" parent="."]
+position = Vector2(0, -13)
 
 [node name="Sprite2D" type="Sprite2D" parent="."]
 texture_filter = 1

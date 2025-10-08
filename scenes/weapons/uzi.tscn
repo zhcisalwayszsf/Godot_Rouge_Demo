@@ -17,4 +17,7 @@ shape = SubResource("RectangleShape2D_kcpwf")
 [node name="Sprite2D" type="Sprite2D" parent="."]
 
 [node name="MuzzlePoint" type="Node2D" parent="."]
-position = Vector2(10, 0)
+position = Vector2(16, -16)
+
+[node name="AimPoint" type="Node2D" parent="."]
+position = Vector2(0, -16)

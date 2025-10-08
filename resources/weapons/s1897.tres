@@ -1,0 +1,39 @@
+[gd_resource type="Resource" script_class="WeaponData" load_steps=2 format=3 uid="uid://dctay07x1q6uc"]
+
+[ext_resource type="Script" uid="uid://dlt1l6gpxqnru" path="res://scripts/data/WeaponData.gd" id="1_bdkcf"]
+
+[resource]
+script = ExtResource("1_bdkcf")
+weapon_name = "s1897"
+weapon_display_name = "S1897霰弹枪"
+id = 5
+description = "经典霰弹枪，简单好用"
+weapon_type = 0
+rarity = 0
+magazine_size = 5
+current_magazine_ammo = 5
+fire_mode = 0
+burst_count = 2
+gun_type = 1
+shotgun_bullet_count = 7
+rpg_explosion_range = 120.0
+aiming_precision = 1.0
+remaining_time = 0.25
+base_damage = 7.0
+extra_damage = 0.0
+tick_damage = 5.0
+fire_rate = 4.0
+click_rate = 1.0
+weapon_precision = 0.2
+weapon_precision_angle = 30.0
+bullet_size = 1.0
+attack_distance = 600.0
+bullet_speed = 1000.0
+ammo_type = 0
+damage_type = 0
+reload_time = 2.5
+needs_aiming = false
+projectile_type = 0
+special_effects = Array[String]([])
+special_func = null
+metadata/_custom_type_script = "uid://dlt1l6gpxqnru"

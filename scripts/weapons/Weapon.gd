@@ -8,6 +8,7 @@ var weapon_data: WeaponData
 # 子节点引用 - 供WeaponSystem使用
 @onready var weapon_sprite: Sprite2D = $Sprite2D if has_node("Sprite2D") else null
 @onready var muzzle_point: Node2D = $MuzzlePoint if has_node("MuzzlePoint") else null
+@onready var aim_point: Node2D = $AimPoint if has_node("AimPoint") else null
 @onready var shell_eject_point: Node2D = $ShellEjectPoint if has_node("ShellEjectPoint") else null
 @onready var collision_shape: CollisionShape2D = $CollisionShape2D if has_node("CollisionShape2D") else null
 
@@ -23,28 +24,59 @@ func _ready():
 	load_weapon_data()
 
 func load_weapon_data():
-	#print("loade_weapon调用者："+funcName+"\n")
-	"""自动加载同名的WeaponData文件"""
-	# 现在不重命名节点了，所以逻辑可以简化
+	"""自动加载武器数据 - 优先使用weapon_name，失败后尝试weapon_ID"""
+	var data_path: String = ""
+	var weapon_info: Dictionary = {}
 	
+	# 第一步：尝试通过 weapon_name 查找
+	if weapon_name and not weapon_name.is_empty():
+		weapon_info = WeaponList.get_weapon_by_name(weapon_name)
+		if weapon_info.has("data_path"):
+			data_path = weapon_info["data_path"]
+			print("通过武器名称找到数据路径: ", weapon_name, " -> ", data_path)
+		else:
+			print("警告: 通过名称 '", weapon_name, "' 未找到武器数据，尝试使用ID查找...")
 	
-	var data_path = WeaponList.get_weapon_by_name(name)["data_path"]
+	# 第二步：如果通过名称查找失败，尝试通过 weapon_ID 查找
+	if data_path.is_empty() and weapon_ID > 0:
+		weapon_info = WeaponList.get_weapon_by_id(weapon_ID)
+		if weapon_info.has("data_path"):
+			data_path = weapon_info["data_path"]
+			print("通过武器ID找到数据路径: ", weapon_ID, " -> ", data_path)
+			# 如果通过ID找到了，更新weapon_name
+			if weapon_info.has("name"):
+				weapon_name = weapon_info["name"]
+				print("已自动更新武器名称为: ", weapon_name)
+		else:
+			print("警告: 通过ID '", weapon_ID, "' 也未找到武器数据")
 	
-	print("尝试加载武器数据: ", data_path)
+	# 第三步：如果两种方式都失败，创建后备数据
+	if data_path.is_empty():
+		print("错误: 无法通过名称 '", weapon_name, "' 或ID '", weapon_ID, "' 找到武器数据，使用后备数据")
+		create_fallback_weapon_data()
+		return
 	
+	# 第四步：尝试加载找到的数据路径
 	if ResourceLoader.exists(data_path):
 		var loaded_data = load(data_path)
 		if loaded_data and loaded_data is WeaponData:
 			weapon_data = loaded_data
-			print("已加载武器数据：", data_path)
-			# 确保 weapon_data 有正确的名称
+			print("✓ 成功加载武器数据: ", data_path)
+			
+			# 确保 weapon_data 有正确的名称和ID
 			if weapon_data.weapon_name.is_empty():
-				weapon_data.weapon_name = data_path.get_file().get_basename()
+				weapon_data.weapon_name = weapon_name if not weapon_name.is_empty() else data_path.get_file().get_basename()
+			
+			# 同步武器组件的属性
+			if weapon_info.has("id"):
+				weapon_ID = weapon_info["id"]
+			if weapon_info.has("name"):
+				weapon_name = weapon_info["name"]
 		else:
 			print("错误: 加载的资源不是有效的WeaponData: ", data_path)
 			create_fallback_weapon_data()
 	else:
-		print("警告: 武器数据文件不存在: ", data_path)
+		print("错误: 武器数据文件不存在: ", data_path)
 		create_fallback_weapon_data()
 
 func create_fallback_weapon_data():

@@ -1,0 +1,29 @@
+[gd_scene load_steps=4 format=3 uid="uid://dxy4y7o1kea6c"]
+
+[ext_resource type="Script" uid="uid://yicyd5wrlt6k" path="res://scripts/weapons/Weapon.gd" id="1_y0pqh"]
+[ext_resource type="Texture2D" uid="uid://gu0yf3wq7dct" path="res://assets/weapons/s1897.png" id="2_y0pqh"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_kcpwf"]
+size = Vector2(240, 48)
+
+[node name="s1897" type="Area2D"]
+collision_layer = 0
+collision_mask = 0
+script = ExtResource("1_y0pqh")
+weapon_ID = 5
+weapon_name = "s1897"
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+position = Vector2(41, -1)
+shape = SubResource("RectangleShape2D_kcpwf")
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+texture_filter = 1
+position = Vector2(49, -9)
+texture = ExtResource("2_y0pqh")
+
+[node name="MuzzlePoint" type="Node2D" parent="."]
+position = Vector2(160, -11)
+
+[node name="AimPoint" type="Node2D" parent="."]
+position = Vector2(0, -11)

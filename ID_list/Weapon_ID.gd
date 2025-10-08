@@ -25,6 +25,12 @@ static var weapons_by_id={
 		"name":"smg_pistol",
 		"data_path":"res://resources/weapons/smg_pistol.tres",
 		"tscn_path":"res://scenes/weapons/smg_pistol.tscn"
+	},
+	5:{
+		"id":5,
+		"name":"s1897",
+		"data_path":"res://resources/weapons/s1897.tres",
+		"tscn_path":"res://scenes/weapons/s1897.tscn"
 	}
 }
 static func _int_name_dict()->Dictionary:
