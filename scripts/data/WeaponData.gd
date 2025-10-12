@@ -44,4 +44,5 @@ class_name WeaponData
 @export var needs_aiming: bool = false ## 需要瞄准？
 @export_enum("直线", "抛物线", "追踪","穿透") var projectile_type: int = 0 ## 子弹飞行机制
 @export var special_effects: Array[String] = [] ## 特殊效果
-@export var special_func:Callable = func():pass ## 附加功能
+@export var special_func_id: int = -1 ##默认特殊效果
+@export var special_func:Callable = func():pass ## 附加功能函数

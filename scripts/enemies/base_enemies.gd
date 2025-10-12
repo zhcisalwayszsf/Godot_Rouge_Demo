@@ -1,7 +1,7 @@
 extends CharacterBody2D
 
 @onready var weapon_pivot = $Visuals/WeaponPivot
-
+@onready var detect_area =$Area2D
 
 @export var equipped_weapon_id:int
 @export var equipped_weapon_name:String
@@ -13,6 +13,8 @@ var player:CharacterBody2D
 
 var health:float
 var armor:float
+
+
 
 enum stat{
 		partol,#巡逻
@@ -42,6 +44,8 @@ var attack_timer:Timer = null
 var fire_timer:Timer = null
 var burst_fire_timer:Timer = null
 var burst_fire_left = 1
+
+var last_shotgun_bullet_tick_numb :int = 0
 # ================================
 func _ready():
 	"""初始化信息"""
@@ -64,7 +68,8 @@ func _ready():
 	#测试代码
 	start_attack(10)
 	in_move=true
-
+	
+	
 func _process(delta: float) -> void:
 	pass
 
@@ -253,7 +258,15 @@ func finish_attack():
 #====受伤====
 func take_damage(damage:float,special_info:Dictionary={}):
 	#有甲先扣甲
-	special_info.function.call()
+	if special_info.has("from_shotgun"):
+		#print("I have been shoot by shotgun")
+		if special_info.from_shotgun and not last_shotgun_bullet_tick_numb == special_info.bullet_tick_numb:
+			#print("校验通过")
+			special_info.function.call()
+			last_shotgun_bullet_tick_numb = special_info.bullet_tick_numb
+	else:
+		special_info.function.call()
+		
 	if not has_armor:
 		return
 	if armor > 0:
@@ -281,4 +294,6 @@ func handle_die():
 			TimerPool.return_timer(fire_timer)
 		#AudioSystem.play_sound("enermy_die")
 		#play_die_effect()
+		#detect_area.process_mode = Node.PROCESS_MODE_DISABLED ##启用这个会使在血量小于零时立即停止检测子弹，即喷子等的剩余子弹会穿透
+		#print(name,":我要死了")
 		self.queue_free()

@@ -572,7 +572,7 @@ func execute_normal_fire(weapon_data: WeaponData, muzzle_point: Node2D,direction
 	bullet_data.start_position = muzzle_point.global_position
 	#bullet_data.special_info = {"function":test}
 	#bullet_data.special_info = {"function":func():print("子弹的附加函数运行了")}
-	bullet_data.special_info = {"function":weapon_data.special_func} if weapon_data.special_func else {"function":func():pass}
+	bullet_data.special_info = {"function":weapon_data.special_func} if weapon_data.special_func.is_valid() else {"function":func():pass}
 	# bullet_data.special_info = {} # 在这里添加特殊效果信息
 	
 	
@@ -588,6 +588,9 @@ func execute_shotgun_fire(weapon_data: WeaponData, muzzle_point: Node2D,directio
 	"""霰弹枪射击 - 一次发射多颗子弹"""
 	var bullet_count = weapon_data.shotgun_bullet_count if weapon_data.shotgun_bullet_count > 0 else 5
 	
+	var bullet_rng = RandomNumberGenerator.new()
+	var tick_numb= bullet_rng.randi()
+	#weapon_data.special_func = FuncsList.get_func_by_id(weapon_data.special_func_id) ##使用自建微型方法库的示例
 	
 	for i in range(bullet_count):
 		# 创建每颗子弹的数据
@@ -596,12 +599,19 @@ func execute_shotgun_fire(weapon_data: WeaponData, muzzle_point: Node2D,directio
 		bullet_data.travel_range = weapon_data.attack_distance
 		bullet_data.speed = weapon_data.bullet_speed
 		bullet_data.size = weapon_data.bullet_size
-		
+		bullet_data.is_shotgun_bullet = true
 		# 为每颗子弹计算扩散方向
 		bullet_data.direction = get_weapon_precision(weapon_data,direction)
-		
 		bullet_data.start_position = muzzle_point.global_position
-		bullet_data.special_info = {"function": weapon_data.special_func} if weapon_data.special_func else {"function": func(): pass}
+		bullet_data.is_shotgun_bullet = true
+		bullet_data.tick_group = tick_numb
+		
+		bullet_data.special_info = {
+				"function": weapon_data.special_func,"from_shotgun":true,"bullet_tick_numb":tick_numb
+			} if weapon_data.special_func.is_valid() else {
+				"function": func(): pass,"from_shotgun":true,"bullet_tick_numb":tick_numb
+			}
+		
 		
 		# 从对象池获取子弹
 		var bullet = BulletPool.get_bullet(bullet_data)
@@ -779,18 +789,91 @@ func update_weapon_rotation():
 	var mouse_pos = weapon_pivot.get_global_mouse_position()
 	var direction = (mouse_pos - weapon_pivot.global_position).normalized()
 	
-	# 计算角度
-	var angle = direction.angle()
-	weapon_pivot.rotation = angle
-	
 	# 根据鼠标的X轴方向翻转整个武器锚点
 	if direction.x < 0:
-		# 鼠标在左侧，将 WeaponPivot 在垂直方向上进行镜像缩放
 		weapon_pivot.scale.y = -1
 	else:
-		# 鼠标在右侧，恢复正常缩放
 		weapon_pivot.scale.y = 1
+	
+	# 计算角度
+	var angle = calculate_weapon_rotation(mouse_pos, direction)
+	weapon_pivot.rotation = angle
 
+func calculate_weapon_rotation(mouse_global_position: Vector2, direction: Vector2) -> float:
+	var weapon_component = get_active_weapon_component()
+	if not weapon_component:
+		return 0.0
+	
+	# 获取子节点
+	var muzzle_point = weapon_component.get_node("MuzzlePoint")
+	var aim_point = weapon_component.get_node("AimPoint")
+	
+	# === 使用全局坐标获取实际的三角形 ===
+	var W: Vector2 = weapon_pivot.global_position  # pivot中心
+	var M: Vector2 = mouse_global_position  # 鼠标位置
+	
+	# 获取当前未旋转状态下的AimPoint和MuzzlePoint全局位置
+	# 方法：临时保存并重置weapon_pivot的旋转
+	var original_rotation = weapon_pivot.rotation
+	weapon_pivot.rotation = 0  # 重置为0度
+	
+	var B_global: Vector2 = aim_point.global_position  # AimPoint实际全局位置
+	var C_global: Vector2 = muzzle_point.global_position  # MuzzlePoint实际全局位置
+	
+	weapon_pivot.rotation = original_rotation  # 恢复旋转
+	
+	# 特殊情况检测：鼠标太近
+	var muzzle_to_pivot_distance = (C_global - W).length()
+	var mouse_to_pivot_distance = (M - W).length()
+	
+	if mouse_to_pivot_distance < muzzle_to_pivot_distance:
+		return direction.angle()
+	
+	# === 转换为相对于pivot的向量（实际尺寸）===
+	var B_relative = B_global - W
+	var C_relative = C_global - W
+	var M_relative = M - W
+	
+	# 定义常量（使用实际的全局距离）
+	var A_x: float = M_relative.x
+	var A_y: float = M_relative.y
+	
+	var dX: float = C_relative.x - B_relative.x
+	var dY: float = C_relative.y - B_relative.y
+	
+	var Bx: float = B_relative.x
+	var By: float = B_relative.y
+	
+	# 牛顿迭代求解
+	var initial_guess: float = M_relative.angle()
+	var theta: float = initial_guess
+	
+	for i in range(10):
+		var cos_t: float = cos(theta)
+		var sin_t: float = sin(theta)
+		
+		var BC_x = dX * cos_t - dY * sin_t
+		var BC_y = dX * sin_t + dY * cos_t
+		
+		var BM_x = A_x - (Bx * cos_t - By * sin_t)
+		var BM_y = A_y - (Bx * sin_t + By * cos_t)
+		
+		var f: float = BC_x * BM_y - BC_y * BM_x
+		
+		var dBC_x = -BC_y
+		var dBC_y = BC_x
+		var dBM_x = Bx * sin_t + By * cos_t
+		var dBM_y = -Bx * cos_t + By * sin_t
+		
+		var df: float = (dBC_x * BM_y + BC_x * dBM_y) - (dBC_y * BM_x + BC_y * dBM_x)
+		
+		if abs(df) < 0.0001:
+			break
+		
+		theta = theta - f / df
+	
+	return theta
+	
 # === 武器精准度系统 ===
 func get_weapon_precision(weaponData:WeaponData,offset_vector:Vector2)->Vector2:
 	var weapon_precision

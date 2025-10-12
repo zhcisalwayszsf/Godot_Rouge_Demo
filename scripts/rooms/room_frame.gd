@@ -48,12 +48,9 @@ func _ready():
 	# 连接区域检测信号
 	if detection_area:
 		detection_area.body_entered.connect(_on_player_entered)
-		
-	var collision_shape = CollisionShape2D.new()
-	var rect_shape = RectangleShape2D.new()
-	rect_shape.size = Vector2(1664, 1024)
-	collision_shape.shape = rect_shape
-	detection_area.add_child(collision_shape)
+
+
+
 
 func load_tiles(room_theme):
 	match room_theme:

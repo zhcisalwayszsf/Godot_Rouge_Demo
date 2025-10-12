@@ -2,7 +2,7 @@
 
 [ext_resource type="Script" uid="uid://brjs7q186p2ev" path="res://scripts/enemies/base_enemies.gd" id="1_l8146"]
 [ext_resource type="Script" uid="uid://d1gtkfyn3juai" path="res://scripts/data/EnemyData.gd" id="2_eccbf"]
-[ext_resource type="Texture2D" uid="uid://dithfprgumf0u" path="res://icon.svg" id="2_ilkc4"]
+[ext_resource type="Texture2D" uid="uid://ckswljcpb6ek" path="res://icon.svg" id="2_ilkc4"]
 
 [sub_resource type="Resource" id="Resource_3k45u"]
 script = ExtResource("2_eccbf")

@@ -15,7 +15,8 @@ class BulletData:
 	var direction: Vector2 = Vector2.ZERO
 	var start_position: Vector2   #子弹的起始位置
 	var special_info: Dictionary = {"function": func():pass}
-	
+	var is_shotgun_bullet:bool = false
+	var tick_group:int = 0
 var bullet_data: BulletData = BulletData.new()
 
 
@@ -63,6 +64,7 @@ func _on_body_entered(body):
 	
 	if body is TileMapLayer:
 		self.visible = false
+		return_to_pool()
 		return
 	if body.collision_layer & 4 == 4 or body.collision_layer & 8 == 8 :
 		
@@ -74,6 +76,7 @@ func _on_body_entered(body):
 	
 func _on_area_entered(area):
 	# 处理碰撞逻辑
+
 	if area.get_parent().has_method("take_damage"):
 		#print("成功命中")
 		self.visible = false
