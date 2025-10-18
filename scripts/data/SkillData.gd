@@ -94,7 +94,7 @@ class_name SkillData
 @export var cd_reduction_per_level: float = 0.1 # 每级冷却减少量
 
 # 伤害方法判断函数
-func has_damage_method(type: int) -> bool:
+func has_damage_method(type: int) -> bool: ## 顺序为0，1，2，3，4，5...
 	"""检查伤害方法是否包含指定方式（位掩码方式）"""
 	return (damage_method_flags & (1 << type)) != 0
 func add_damage_method(type: int):
@@ -113,17 +113,17 @@ func get_damage_methods() -> Array[int]:
 	return types
 
 # 位移方法判断函数
-func has_movement_method(type: int) -> bool:
-	"""检查伤害方法是否包含指定方式（位掩码方式）"""
+func has_movement_method(type: int) -> bool: ## 顺序为0，1，2，3，4，5...
+	"""检查位移方法是否包含指定方式（位掩码方式）"""
 	return (dash_effect_flags & (1 << type)) != 0
 func add_movement_method(type: int):
-	"""添加伤害方法"""
+	"""添加位移方法"""
 	dash_effect_flags |= (1 << type)
 func remove_movement_method(type: int):
-	"""移除伤害方法"""
+	"""移除位移方法"""
 	dash_effect_flags &= ~(1 << type)
 func get_movement_methods() -> Array[int]:
-	"""获取所有伤害方法"""
+	"""获取所有位移方法"""
 	var types: Array[int] = []
 	var names: Array[String] = ["一次性", "持续"]
 	for i in range(1):  # 0-1对应2种类型
@@ -132,8 +132,8 @@ func get_movement_methods() -> Array[int]:
 	return types
 
 
-# 控制方法判断函数
-func has_control_effect_type(type: int) -> bool:
+# 控制方法判断函数 
+func has_control_effect_type(type: int) -> bool: ## 顺序为0，1，2，3，4，5...
 	"""检查是否包含指定控制类型（位掩码方式）"""
 	return (control_effect_flags & (1 << type)) != 0
 func add_control_effect_type(type: int):
@@ -158,7 +158,7 @@ func set_control_continue_time(control:int,value:float):
 		print("控制持续时间赋值失败：没有此控制")
 
 #Buff判断函数
-func has_buff_type(type: int) -> bool:
+func has_buff_type(type: int) -> bool: ## 顺序为0，1，2，3，4，5...
 	"""检查是否包含指定buff类型（位掩码方式）"""
 	return (buff_flags & (1 << type)) != 0
 func add_buff_type(type: int):
@@ -189,7 +189,7 @@ func set_buff_time(buff:int,value:float):
 		print("buff赋值失败：没有此buff")
 
 # 技能类型判断函数
-func has_skill_type(type: int) -> bool:
+func has_skill_type(type: int) -> bool: ## 顺序为0，1，2，3，4，5...
 	"""检查技能是否包含指定类型（位掩码方式）"""
 	return (skill_type_flags & (1 << type)) != 0
 

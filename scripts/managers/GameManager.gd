@@ -53,6 +53,7 @@ signal enemy_killed(enemy_data: EnemyData)
 signal item_collected(item_name: String)
 signal difficulty_changed(new_difficulty: Difficulty)
 signal player_entered_room(room_name: String)
+signal level_node_changed()
 
 func _ready():
 	print("GameManager 初始化完成")

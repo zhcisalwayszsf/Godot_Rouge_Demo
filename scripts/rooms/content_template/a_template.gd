@@ -23,7 +23,10 @@ func _init() -> void:
 	#populate()
 	
 func _ready() -> void:
-	scale = Vector2(2,2)
+	#scale = Vector2(2,2)
+	y_sort_enabled = true
+	z_as_relative= false
+	pass
 
 func _initialize(theme:int = 0):
 	theme = self.theme if theme<0 or theme >4 else theme
@@ -59,7 +62,7 @@ func populate(floor_level=1, room_type = null): ##主生成方法
 	var all_markers = _collect_all_markers()
 	
 	if all_markers.is_empty():
-		print("    [警告] 未找到任何SpawnMarker")
+		print("[警告] 未找到任何SpawnMarker")
 		return
 	
 	# 预处理互斥组
@@ -188,6 +191,8 @@ func _spawn_at_marker_v3(marker: SpawnMarker):
 	
 	if not container:
 		container = Node2D.new()
+		container.y_sort_enabled = true
+		container.z_as_relative= false
 		container.name = container_name
 		entity_layer.add_child(container)
 	

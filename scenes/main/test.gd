@@ -18,14 +18,13 @@ func _ready():
 	test_weapon = preload("res://scenes/weapons/uzi.tscn")
 	test_weapon2 = preload("res://scenes/weapons/pistol_ice.tscn")
 	test_weapon3 = preload("res://scenes/weapons/s1897.tscn")
-	test_skill = preload("res://resources/skills/SecondarySkill/TestDash.tres") as SkillData
+	test_skill = preload("res://resources/skills/SecondarySkill/Skill_DecoyVanish.tres") as SkillData
 	var level_data = level_generator()
 	
 	# 设置小地图
 	if minimap:
 		minimap.setup_minimap(level_data)
 
-	#print_scene_tree_to_file()
 
 
 func _input(event):
@@ -33,6 +32,8 @@ func _input(event):
 		#test_weapon_weapon_data.emit(test_weapon2, 1)
 		weapon_instance =test_weapon3.instantiate()
 		test_weapon_component.emit(weapon_instance, 1)
+		
+		SkillSystem.equip_skill_with_script(test_skill,1)
 		#print_scene_tree_to_file()
 	if event.is_action_pressed("space"):
 		SkillSystem.equip_skill_with_script(test_skill,1)
@@ -40,7 +41,7 @@ func _input(event):
 	
 	if event.is_action_pressed("space"):
 		remove_child(level_node)
-		var level_data = NormalLevelGenerator.generate_with_config(config)
+		var level_data = LevelFrameGenerator.generate_with_config(config)
 		level_node = level_data.get("level_node")
 		add_child(level_node)
 		if minimap:
@@ -48,7 +49,7 @@ func _input(event):
 	
 
 func level_generator()->Dictionary:
-	var level_data = NormalLevelGenerator.generate()
+	var level_data = LevelFrameGenerator.generate()
 	level_node = level_data.get("level_node")
 	if level_node:
 		var room1 = level_node.get_node_or_null("room1")
@@ -58,7 +59,7 @@ func level_generator()->Dictionary:
 		building.position = room1.position
 		add_child(building)
 		
-	config = NormalLevelGenerator.level_config.new().config_dic
+	config = LevelFrameGenerator.level_config.new().config_dic
 	config.GRID_SIZE = 5
 	config.TARGET_ROOMS = 10
 	config.CONNECTION_RATE = 0.2

@@ -13,7 +13,7 @@ script = ExtResource("1_bdhu5")
 [node name="PlayerHUD" parent="." instance=ExtResource("2_bdhu5")]
 
 [node name="Player" parent="." instance=ExtResource("1_h3hfy")]
-position = Vector2(224, 32)
+position = Vector2(-6, 266)
 
 [node name="Camera2D" type="Camera2D" parent="Player"]
 zoom = Vector2(1.2, 1.2)
@@ -21,4 +21,4 @@ zoom = Vector2(1.2, 1.2)
 [node name="MiniMap" parent="." instance=ExtResource("4_jbo7p")]
 
 [node name="Floating_Skeleton" parent="." instance=ExtResource("5_pte8o")]
-position = Vector2(519, 146)
+position = Vector2(464, 154)

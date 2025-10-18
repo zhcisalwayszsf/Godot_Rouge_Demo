@@ -1,6 +1,6 @@
-[gd_scene load_steps=3 format=3 uid="uid://chi8vx47yjjys"]
+[gd_scene load_steps=3 format=3 uid="uid://beibgextdx87e"]
 
-[ext_resource type="Texture2D" uid="uid://daacaruha87ft" path="res://assets/grounds/DIY/tree4.png" id="1_30rtv"]
+[ext_resource type="Texture2D" uid="uid://daacaruha87ft" path="res://assets/grounds/DIY/tree4.png" id="1_14ufv"]
 
 [sub_resource type="CapsuleShape2D" id="CapsuleShape2D_30rtv"]
 radius = 4.0
@@ -19,5 +19,5 @@ shape = SubResource("CapsuleShape2D_30rtv")
 [node name="Sprite2D" type="Sprite2D" parent="."]
 texture_filter = 1
 position = Vector2(0, -45)
-texture = ExtResource("1_30rtv")
+texture = ExtResource("1_14ufv")
 region_rect = Rect2(0, 224, 160, 160)

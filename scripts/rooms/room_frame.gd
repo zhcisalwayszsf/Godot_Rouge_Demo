@@ -24,7 +24,7 @@ var cornor_lb : Vector2i = Vector2i(-27,15)
 var cornor_rb : Vector2i = Vector2i(25,15)
 var cornor_rt : Vector2i = Vector2i(25,-17)
 
-var room_info: NormalLevelGenerator.RoomInfo
+var room_info: LevelFrameGenerator.RoomInfo
 var wall_body: StaticBody2D  ## 墙体碰撞节点
 var room_name
 
@@ -48,7 +48,7 @@ func _ready():
 	# 连接区域检测信号
 	if detection_area:
 		detection_area.body_entered.connect(_on_player_entered)
-
+	
 
 
 
@@ -73,7 +73,7 @@ func load_tiles(room_theme):
 			tiles_floor = spring_floor.instantiate()
 			tiles_wall = spring_wall.instantiate()
 
-func instantiate_tile(p_room_info: NormalLevelGenerator.RoomInfo):
+func instantiate_tile(p_room_info: LevelFrameGenerator.RoomInfo):
 	room_info = p_room_info
 	room_name = p_room_info.room_name  ## 保存房间名称
 	load_tiles(room_info.level_theme_in_room)
@@ -266,3 +266,7 @@ func _on_player_entered(body: Node2D):
 	if body.is_in_group("player") and not room_name.is_empty():
 		# 发送到GameManager中转
 		GameManager.on_player_entered_room(room_name)
+
+		
+		
+		

@@ -33,20 +33,20 @@ func load_weapon_data():
 		weapon_info = WeaponList.get_weapon_by_name(weapon_name)
 		if weapon_info.has("data_path"):
 			data_path = weapon_info["data_path"]
-			print("通过武器名称找到数据路径: ", weapon_name, " -> ", data_path)
-		else:
-			print("警告: 通过名称 '", weapon_name, "' 未找到武器数据，尝试使用ID查找...")
+			#print("通过武器名称找到数据路径: ", weapon_name, " -> ", data_path)
+		#else:
+			#print("警告: 通过名称 '", weapon_name, "' 未找到武器数据，尝试使用ID查找...")
 	
 	# 第二步：如果通过名称查找失败，尝试通过 weapon_ID 查找
 	if data_path.is_empty() and weapon_ID > 0:
 		weapon_info = WeaponList.get_weapon_by_id(weapon_ID)
 		if weapon_info.has("data_path"):
 			data_path = weapon_info["data_path"]
-			print("通过武器ID找到数据路径: ", weapon_ID, " -> ", data_path)
+			#print("通过武器ID找到数据路径: ", weapon_ID, " -> ", data_path)
 			# 如果通过ID找到了，更新weapon_name
 			if weapon_info.has("name"):
 				weapon_name = weapon_info["name"]
-				print("已自动更新武器名称为: ", weapon_name)
+				#print("已自动更新武器名称为: ", weapon_name)
 		else:
 			print("警告: 通过ID '", weapon_ID, "' 也未找到武器数据")
 	
@@ -61,7 +61,7 @@ func load_weapon_data():
 		var loaded_data = load(data_path)
 		if loaded_data and loaded_data is WeaponData:
 			weapon_data = loaded_data
-			print("✓ 成功加载武器数据: ", data_path)
+			#print("✓ 成功加载武器数据: ", data_path)
 			
 			# 确保 weapon_data 有正确的名称和ID
 			if weapon_data.weapon_name.is_empty():
@@ -73,7 +73,7 @@ func load_weapon_data():
 			if weapon_info.has("name"):
 				weapon_name = weapon_info["name"]
 		else:
-			print("错误: 加载的资源不是有效的WeaponData: ", data_path)
+			print_debug("错误: 加载的资源不是有效的WeaponData: ", data_path)
 			create_fallback_weapon_data()
 	else:
 		print("错误: 武器数据文件不存在: ", data_path)
@@ -88,7 +88,7 @@ func create_fallback_weapon_data():
 	weapon_data.fire_rate = 1.0
 	weapon_data.magazine_size = 30
 	weapon_data.current_magazine_ammo = 30
-	print("创建后备武器数据: ", weapon_data.weapon_name)
+	#print("创建后备武器数据: ", weapon_data.weapon_name)
 
 # === 手动设置武器数据的方法 ===
 
@@ -166,6 +166,11 @@ func add_special_effect(effect: String):
 func set_weapon_visibility(p_visible: bool):
 	"""设置武器可见性"""
 	self.visible = p_visible
+func set_special_func(p_spcial_func:Callable)->bool:
+	if not weapon_data or not p_spcial_func.is_valid():
+		return false
+	weapon_data.special_func = p_spcial_func
+	return true
 
 # === 调试方法 ===
 

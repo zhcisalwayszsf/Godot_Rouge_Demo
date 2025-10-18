@@ -84,7 +84,7 @@ func _process(delta):
 # === 初始化 ===
 func initialize_default_skills():
 	"""初始化默认技能"""
-	var default_secondary_skill = load("res://resources/skills/SecondarySkill/SimpleDash.tres") as SkillData
+	var default_secondary_skill = load("res://resources/skills/SecondarySkill/Skill_SimpleDash.tres") as SkillData
 	if default_secondary_skill:
 		equip_skill_with_script(default_secondary_skill, 1)
 
@@ -151,9 +151,9 @@ func load_skill_script(skill_name: String, slot: int) -> Script:
 	"""加载技能脚本文件"""
 	var script_path = null
 	if slot == 0:
-		script_path = skill_scenes_path + "PrimarySkills/" + skill_name + ".gd"
+		script_path = skill_scenes_path + "PrimarySkills/" + "Skill_" + skill_name + ".gd"
 	if slot == 1:
-		script_path = skill_scenes_path + "SecondarySkills/" + skill_name + ".gd"
+		script_path = skill_scenes_path + "SecondarySkills/" + "Skill_"  + skill_name + ".gd"
 		
 	if FileAccess.file_exists(script_path):
 		return load(script_path) as Script
@@ -606,13 +606,15 @@ func execute_buff_skill(skill_data: SkillData, position: Vector2):
 
 func apply_movement_effect(skill_data: SkillData,type:int=0,time:float=0):
 	"""应用无敌或无碰撞效果"""
-	match skill_data.dash_type:
-		0: # 无敌
-				time = time if time>0 else skill_data.dash_effect_continue_time
-				PlayerDataManager.player_node.set_invulnerable(time)
-		1: # 无碰撞
-				time = time if time>0 else skill_data.dash_effect_continue_time
-				PlayerDataManager.player_node.set_no_collision(time)
+	
+	if skill_data.has_movement_method(0): # 无敌
+		#print("有无敌效果，按0来取",skill_data.has_movement_method(0))
+		time = time if time>0 else skill_data.dash_effect_continue_time
+		PlayerDataManager.player_node.set_invulnerable(time)
+	if skill_data.has_movement_method(1): # 无碰撞
+		#print("有无碰撞效果，按1来取",skill_data.has_movement_method(1))
+		time = time if time>0 else skill_data.dash_effect_continue_time
+		PlayerDataManager.player_node.set_no_collision(time)
 
 func apply_buff_effect(skill_data: SkillData,target:CharacterBody2D,time:float=0):
 	"""应用增益效果"""
@@ -620,8 +622,8 @@ func apply_buff_effect(skill_data: SkillData,target:CharacterBody2D,time:float=0
 	
 	if skill_data.has_buff_type(2):
 		var row_speed = PlayerDataManager.player_stats.move_speed
-		PlayerDataManager.player_stats.move_speed = skill_data.buff_value[2]
-		var buff_timer= TimerPool.instance.create_one_shot_timer(
+		PlayerDataManager.player_stats.move_speed += skill_data.buff_value[2]
+		var buff_timer= TimerPool.create_one_shot_timer(
 			skill_data.buff_time[2],
 			func():
 				PlayerDataManager.player_stats.move_speed = row_speed)
@@ -630,7 +632,7 @@ func apply_buff_effect(skill_data: SkillData,target:CharacterBody2D,time:float=0
 	if skill_data.has_buff_type(0):
 		var row_damage_multiplier = PlayerDataManager.player_stats.damage_multiplier
 		PlayerDataManager.player_stats.damage_multiplier = skill_data.buff_value[0]
-		var buff_timer= TimerPool.instance.create_one_shot_timer(
+		var buff_timer= TimerPool.create_one_shot_timer(
 			skill_data.buff_time[0] if time >0 else skill_data.buff_time[0],
 			func():
 				PlayerDataManager.player_stats.damage_multiplier = row_damage_multiplier)

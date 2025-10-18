@@ -247,6 +247,8 @@ func _generate_level_internal() -> LevelData: ## 内部生成方法 - 返回Leve
 	
 	var level_data = LevelData.new()
 	var level_node = Node2D.new()
+	level_node.y_sort_enabled = true
+	level_node.z_as_relative= false
 	level_node.name = "Level"
 	level_data.level_node = level_node
 	
@@ -477,7 +479,7 @@ func _instantiate_rooms_to_level(level_node: Node2D): ## 将房间实例化到Le
 	print("房间列表: ", room_position_map.values())
 
 # 优化_create_room_info_for_position，确保不返回null
-func _create_room_info_for_position(room_pos: Vector2i, room_name: String) -> NormalLevelGenerator.RoomInfo: ##为指定位置创建RoomInfo对象 - 用于实例化时调用
+func _create_room_info_for_position(room_pos: Vector2i, room_name: String) -> LevelFrameGenerator.RoomInfo: ##为指定位置创建RoomInfo对象 - 用于实例化时调用
 	"""为指定位置创建RoomInfo对象 - 用于实例化时调用"""
 	var cell = grid.get(room_pos) as RoomCell
 	if not cell:
@@ -1486,7 +1488,7 @@ func _log_debug(message: String):
 
 # 示例1：使用默认参数快速生成
 func generate_default_level():
-	var result = NormalLevelGenerator.generate()
+	var result = LevelFrameGenerator.generate()
 	
 	# 获取生成的节点
 	add_child(result.level_node)
@@ -1507,7 +1509,7 @@ func generate_default_level():
 
 # 示例2：自定义参数生成
 func generate_custom_level():
-	var result = NormalLevelGenerator.generate(
+	var result = LevelFrameGenerator.generate(
 		7,      # grid_size
 		12,     # target_rooms
 		0.7,    # connection_rate
@@ -1538,7 +1540,7 @@ func generate_with_config():
 		}
 	}
 	
-	var result = NormalLevelGenerator.generate_with_config(config)
+	var result = LevelFrameGenerator.generate_with_config(config)
 	
 	# 根据房间信息做进一步处理
 	for key in result.all_rooms_info:

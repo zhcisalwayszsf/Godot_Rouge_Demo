@@ -520,13 +520,13 @@ func _populate_single_room(room_node: Node2D, room_data: RoomData):
 	])
 	
 	# 获取或创建TerrainContent容器
-	var terrain_content = room_node.get_node_or_null("TerrainContent")
-	if not terrain_content:
-		terrain_content = Node2D.new()
-		terrain_content.name = "TerrainContent"
-		terrain_content.z_as_relative = true
-		terrain_content.y_sort_enabled = true
-		room_node.add_child(terrain_content)
+	#var terrain_content = room_node.get_node_or_null("TerrainContent")
+	#if not terrain_content:
+		#terrain_content = Node2D.new()
+		#terrain_content.name = "TerrainContent"
+		#terrain_content.z_as_relative = false
+		#terrain_content.y_sort_enabled = true
+		#room_node.add_child(terrain_content)
 	
 	# 加载模板
 	var template_scene = _load_template(room_data) 
@@ -537,7 +537,7 @@ func _populate_single_room(room_node: Node2D, room_data: RoomData):
 	
 	# 实例化模板
 	var content_instance = template_scene.instantiate()
-	terrain_content.add_child(content_instance)
+	room_node.add_child(content_instance)
 	
 	# ===== 关键修改：先设置主题，再调用populate =====
 	# 设置主题 (必须在populate之前)

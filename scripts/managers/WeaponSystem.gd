@@ -590,8 +590,8 @@ func execute_shotgun_fire(weapon_data: WeaponData, muzzle_point: Node2D,directio
 	
 	var bullet_rng = RandomNumberGenerator.new()
 	var tick_numb= bullet_rng.randi()
-	#weapon_data.special_func = FuncsList.get_func_by_id(weapon_data.special_func_id) ##使用自建微型方法库的示例
-	
+	#get_active_weapon_component().set_special_func(FuncsList.get_func_by_id(weapon_data.special_func_id)) ##从武器节点使用自建微型方法库的示例
+	#weapon_data.special_func = FuncsList.get_func_by_id(weapon_data.special_func_id) ## 从武器数据使用自建微型方法库的示例
 	for i in range(bullet_count):
 		# 创建每颗子弹的数据
 		var bullet_data = Bullet.BulletData.new()

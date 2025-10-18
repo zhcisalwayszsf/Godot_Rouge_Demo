@@ -6,7 +6,7 @@ var shadow_source: Sprite2D
 
 
 var last_shadow_position: Vector2  ## 记录上一个阴影的位置
-var shadow_distance: float ## 每隔30像素创建一个阴影
+var shadow_distance: float ## 创建残影个最小单位（根据总长度除以个数）
 var effecting:bool = false
 
 func initialize_skill(): ## Skill System 装备技能到槽位后运行一次

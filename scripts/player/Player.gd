@@ -7,7 +7,6 @@ extends CharacterBody2D
 @onready var skill_pivot = $SkillPivot
 @onready var collision_shape = $CollisionShape2D
 @onready var area:Area2D = $Area2D
-
 # 移动相关
 var move_direction: Vector2 = Vector2.ZERO
 var base_move_speed: float = 300.0
@@ -31,7 +30,6 @@ var original_collision_mask: int
 # 原始碰撞层设置
 var original_area_collision_layer: int
 var original_area_collision_mask: int
-
 # 信号
 signal health_changed(current: int, max: int)
 signal energy_changed(current: int, max: int)
@@ -86,8 +84,7 @@ func _ready():
 		#print("test:获取到父节点")
 		if test_node_link.has_signal("test_weapon_component"):
 			test_node_link.test_weapon_component.connect(WeaponSystem.equip_weapon_component)
-
-
+			
 
 func _process(delta: float) -> void:
 
@@ -167,6 +164,11 @@ func _input(event):
 		try_pickup_nearby_items()
 
 # === 移动系统 - 重构后 ===
+func _notification(what):
+	if what == NOTIFICATION_EXIT_TREE:
+		print("PLAYER EXIT_TREE. parent:", get_parent(), " owner:", owner)
+	if what == NOTIFICATION_PREDELETE:
+		print("PLAYER PREDELETE. parent:", get_parent(), " owner:", owner)
 
 func _physics_process(delta):
 	if not GameManager.is_game_playing():
@@ -317,10 +319,10 @@ func set_no_collision(duration: float = 0.0, no_collision: bool = true):
 	
 	if no_collision and duration > 0:
 		#print("玩家进入无碰撞状态，持续时间: ", duration)
-		
 		# 修改碰撞层
-		
 		collision_mask = 0
+		set_collision_mask_value(4,true)
+		set_collision_mask_value(9,true)
 		area.collision_layer = 0
 		# 使用TimerPool的便捷方法
 		var no_collision_timer  =TimerPool.create_one_shot_timer(duration, func():

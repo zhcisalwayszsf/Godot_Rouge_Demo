@@ -1,0 +1,56 @@
+[gd_resource type="Resource" script_class="SkillData" load_steps=2 format=3 uid="uid://byo6tdq20rroa"]
+
+[ext_resource type="Script" uid="uid://cj1tlhwg44ioo" path="res://scripts/data/SkillData.gd" id="1_675ci"]
+
+[resource]
+script = ExtResource("1_675ci")
+skill_name = "DecoyVanish"
+skill_display_name = "假身遁形"
+description = "在原地创造一个分身，本体进入隐身状态并获得加速"
+icon_path = ""
+skill_type = 1
+skill_type_flags = 8
+extra_damage = 0.0
+damage_multiplier = 1.0
+energy_cost = 0
+cooldown_time = 5.0
+cast_time = 0.0
+skill_continue_time = 0.0
+damage = 0.0
+damage_method_flags = 1
+continue_damage = 0.0
+continue_damage_time = 0.0
+continue_damage_frequent = 1.0
+damage_target_numb = 0
+damage_distance = 0.0
+action_type = 0
+line_width = 50.0
+area_duration_time = 0.0
+area_radius = 0.0
+area_duration_acting_tick = 1.0
+area_duration_acting_position = 0
+area_max_distance = 400.0
+damage_type = 0
+control_range = 0.0
+control_target_numb = 0.0
+control_effect_flags = 0
+control_continue_time = Array[float]([0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
+control_value = Array[float]([0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
+distance = 0.0
+dash_time = 0.0
+dash_effect_continue_time = 0.0
+dash_effect_flags = 0
+dash_type = 0
+can_multiplier = false
+buff_flags = 4
+buff_value = Array[float]([0.0, 0.0, 200.0, 0.0, 0.0, 0.0, -1.0, -1.0, -1.0])
+buff_time = Array[float]([0.0, 0.0, 2.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
+can_move_while_casting = true
+piercing = false
+special_effects = Array[String]([])
+upgrade_damage_multiplier = 1.0
+upgrade_cd_mutiplier = 1.0
+max_level = 5
+damage_per_level = 5
+cd_reduction_per_level = 0.1
+metadata/_custom_type_script = "uid://cj1tlhwg44ioo"

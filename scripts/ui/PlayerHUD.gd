@@ -245,7 +245,7 @@ func update_skill_cooldowns():
 	var primary_cooldown_progress = SkillSystem.get_cooldown_timer(0)
 	if primary_cooldown_progress > 0:
 		primary_skill_cooldown.visible = true
-		primary_skill_cooldown.value = (1.0 - primary_cooldown_progress) * 100
+		primary_skill_cooldown.value = (1.0 - primary_cooldown_progress/SkillSystem.primary_skill_data.cooldown_time) * 100
 	else:
 		primary_skill_cooldown.visible = false
 	
@@ -253,7 +253,7 @@ func update_skill_cooldowns():
 	var secondary_cooldown_progress = SkillSystem.get_cooldown_timer(1)
 	if secondary_cooldown_progress > 0:
 		secondary_skill_cooldown.visible = true
-		secondary_skill_cooldown.value = (1.0 - secondary_cooldown_progress) * 100
+		secondary_skill_cooldown.value = (1.0 - secondary_cooldown_progress/SkillSystem.secondary_skill_data.cooldown_time) * 100
 	else:
 		secondary_skill_cooldown.visible = false
 

@@ -380,11 +380,12 @@ func _instantiate_single_block(block_name: String, grid_cell: Dictionary, half_s
 	
 	# 创建或获取块容器
 	var container = _get_or_create_container(block_data.get("container", "Blocks"))
-	
+	container.y_sort_enabled = true
+	container.z_as_relative= false
 	# 在网格单元的指定半区内随机偏移
 	var random_offset = _get_random_offset_in_cell(half_side)
 	block_instance.position = grid_cell.position + random_offset
-	
+	block_instance.z_as_relative= false
 	container.add_child(block_instance)
 	
 	if DEBUG_MODE:
@@ -464,6 +465,8 @@ func _add_decorations_for_block(block_name: String, grid_cell: Dictionary, block
 		decoration_instance.position = grid_cell.position + random_offset
 		
 		var container = _get_or_create_container("Decorations")
+		container.y_sort_enabled = true
+		container.z_as_relative= false
 		container.add_child(decoration_instance)
 
 
@@ -499,7 +502,8 @@ func _get_or_create_container(container_name: String) -> Node2D:
 		container = Node2D.new()
 		container.name = container_name
 		entity_layer.add_child(container)
-	
+	container.y_sort_enabled = true
+	container.z_as_relative= false
 	return container
 
 func _clear_entity_layer():

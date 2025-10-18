@@ -1,0 +1,35 @@
+[gd_scene load_steps=3 format=3 uid="uid://v1yoj621jl1m"]
+
+[ext_resource type="Texture2D" uid="uid://bsxrbwk5wosd8" path="res://assets/ammo/firammo.png" id="1_fjats"]
+[ext_resource type="Texture2D" uid="uid://c7cnwhx7yxsm3" path="res://assets/ammo/Bullet.png" id="2_1naex"]
+
+[node name="Node2D" type="Node2D"]
+z_as_relative = false
+y_sort_enabled = true
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+z_as_relative = false
+y_sort_enabled = true
+
+[node name="Sprite2D2" type="Sprite2D" parent="Sprite2D"]
+z_as_relative = false
+y_sort_enabled = true
+position = Vector2(94, 129)
+texture = ExtResource("1_fjats")
+
+[node name="Sprite2D3" type="Sprite2D" parent="Sprite2D/Sprite2D2"]
+z_as_relative = false
+y_sort_enabled = true
+position = Vector2(143, -97)
+texture = ExtResource("1_fjats")
+
+[node name="Sprite2D4" type="Sprite2D" parent="Sprite2D/Sprite2D2"]
+z_as_relative = false
+y_sort_enabled = true
+position = Vector2(26, -174)
+texture = ExtResource("2_1naex")
+
+[node name="Sprite2D4" type="Sprite2D" parent="."]
+z_as_relative = false
+position = Vector2(160, 37)
+texture = ExtResource("2_1naex")

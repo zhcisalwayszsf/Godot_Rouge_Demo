@@ -15,6 +15,7 @@ var selected_upgrades: Array[String] = []
 
 var unstoppable:bool=false
 
+var normal_move = true
 
 # 信号
 signal health_changed(current: int, max: int)
@@ -32,7 +33,10 @@ func _ready():
 func _process(delta):
 	if player_stats:
 		regenerate_energy(delta)
-
+		if normal_move:
+			player_stats.move_speed = player_stats.move_speed if player_stats.move_speed >=0 else player_stats.move_speed * -1
+		elif not normal_move:
+			pass
 # === 初始化 ===
 
 func initialize_default_stats():
@@ -58,7 +62,7 @@ func initialize_default_stats():
 	player_stats.health_bonus = 0
 	player_stats.armor_value = 0
 	
-	print("玩家数据初始化完成")
+	print("PlayerDataManager:玩家数据初始化完成")
 
 func initialize_new_game():
 	"""初始化新游戏"""
@@ -70,12 +74,12 @@ func initialize_new_game():
 	# 发送初始信号
 	emit_all_stat_signals()
 	
-	print("新游戏初始化完成")
+	print("PlayerDataManager：新游戏初始化完成")
 
 func set_player_node(node: Node2D):
 	"""设置玩家节点引用"""
 	player_node = node
-	print("设置玩家节点引用: ", node.name)
+	#print("PlayerDataManager：设置玩家节点引用: ", node.name)
 
 # === 生命值管理 ===
 
@@ -90,7 +94,7 @@ func damage_player(damage: int) -> bool:
 	player_stats.current_health = max(0, player_stats.current_health - actual_damage)
 	health_changed.emit(player_stats.current_health, get_max_health())
 	
-	print("玩家受到伤害: ", actual_damage, " (剩余血量: ", player_stats.current_health, ")")
+	print("PlayerDataManager:玩家受到伤害: ", actual_damage, " (剩余血量: ", player_stats.current_health, ")")
 	
 	# 检查死亡
 	if player_stats.current_health <= 0:
@@ -109,7 +113,7 @@ func heal_player(heal_amount: int):
 	
 	if player_stats.current_health > old_health:
 		health_changed.emit(player_stats.current_health, get_max_health())
-		print("玩家回复血量: ", heal_amount, " (当前血量: ", player_stats.current_health, ")")
+		print("PlayerDataManager:玩家回复血量: ", heal_amount, " (当前血量: ", player_stats.current_health, ")")
 
 func set_health(health: int):
 	"""直接设置血量"""
@@ -135,7 +139,7 @@ func is_player_alive() -> bool:
 
 func handle_player_death():
 	"""处理玩家死亡"""
-	print("玩家死亡")
+	print("PlayerDataManager:玩家死亡")
 	player_died.emit()
 	if GameManager:
 		GameManager.end_game()
@@ -227,7 +231,7 @@ func add_ammo(ammo_type: int, amount: int):
 		_: return
 	
 	ammo_changed.emit(ammo_type, get_ammo(ammo_type))
-	print("获得弹药: 类型", ammo_type, " 数量+", amount)
+	print("PlayerDataManager:获得弹药: 类型", ammo_type, " 数量+", amount)
 
 func set_ammo(ammo_type: int, amount: int):
 	"""设置弹药数量"""
@@ -250,7 +254,7 @@ func add_experience(p_exp: int):
 	current_experience += p_exp
 	experience_gained.emit(p_exp)
 	
-	print("获得经验值: ", p_exp, " (总经验: ", current_experience, ")")
+	print("PlayerDataManager:获得经验值: ", p_exp, " (总经验: ", current_experience, ")")
 	
 	# 检查升级
 	check_level_up()
@@ -262,7 +266,7 @@ func check_level_up():
 		current_level += 1
 		experience_to_next_level = calculate_next_level_exp(current_level)
 		
-		print("玩家升级! 新等级: ", current_level)
+		print("PlayerDataManager:玩家升级! 新等级: ", current_level)
 		level_up.emit(current_level)
 		
 		# 升级时可以触发升级选择界面
@@ -307,7 +311,7 @@ func apply_upgrade(upgrade_type: String, value: float = 1.0):
 			player_stats.special_effects.append(upgrade_type)
 	
 	stats_updated.emit()
-	print("应用升级: ", upgrade_type, " 值: ", value)
+	print("PlayerDataManager:应用升级: ", upgrade_type, " 值: ", value)
 
 func has_upgrade(upgrade_type: String) -> bool:
 	"""检查是否拥有某个升级"""
@@ -519,14 +523,14 @@ func load_player_data(data: Dictionary):
 	player_stats.armor_value = data.get("armor_value", 0)
 	
 	emit_all_stat_signals()
-	print("玩家数据加载完成")
+	print("PlayerDataManager：玩家数据加载完成")
 
 # === 调试功能 ===
 
 func debug_print_stats():
 	"""调试打印玩家状态"""
 	if not player_stats:
-		print("玩家数据未初始化")
+		print("PlayerDataManager：玩家数据未初始化")
 		return
 	
 	print("=== 玩家数据 ===")

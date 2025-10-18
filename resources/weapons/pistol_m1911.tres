@@ -35,5 +35,6 @@ reload_time = 1.2
 needs_aiming = false
 projectile_type = 0
 special_effects = Array[String]([])
+special_func_id = -1
 special_func = null
 metadata/_custom_type_script = "uid://dlt1l6gpxqnru"
